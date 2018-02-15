@@ -44,6 +44,29 @@ inline void getScaledDrift(T tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& d
   drift*=sc;
 }
 
+/** evaluate a drift with a real force
+ *
+ * Using the exact formula in eq.(35-36), J. Chem. Phys. 99, 2865 (1993).
+ * @param tau timestep
+ * @param qf quantum force
+ * @param drift
+ * @param ion charge
+ * @param distance to the nearest ion
+ * @param displacement to the nearest ion
+ */
+template<class T, class TG, unsigned D>
+inline void getScaledDriftUNR(T tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& drift, const T charge, const T& dist, const TinyVector<T,D>& displ)
+{
+  //We convert the complex gradient to real and temporarily store in drift.
+  convert(qf,drift);
+  T vsq = dot(drift,drift);
+  T dist_charge_sq = (charge*dist)^2;
+  T a = 0.5 * ( 1 - dot(drift,displ) ) + dist_charge_sq / ( 10 * (4 + dist_charge_sq) );
+  T sc = (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  //Apply the umrigar scaled drift.
+  drift*=sc;
+}
+
 /** scale drift
  * @param tau_au timestep au
  * @param qf quantum forces
