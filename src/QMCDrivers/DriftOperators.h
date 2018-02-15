@@ -55,14 +55,15 @@ inline void getScaledDrift(T tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& d
  * @param displacement to the nearest ion
  */
 template<class T, class TG, unsigned D>
-inline void getScaledDriftUNR(T tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& drift, const T charge, const T& dist, const TinyVector<T,D>& displ)
+inline void getScaledDriftUNR(T tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& drift, const T charge, const TinyVector<T,D>& displ)
 {
   //We convert the complex gradient to real and temporarily store in drift.
   convert(qf,drift);
   T vsq = dot(drift,drift);
-  T dist_charge_sq = (charge*dist)^2;
-  T a = 0.5 * ( 1 - dot(drift,displ) ) + dist_charge_sq / ( 10 * (4 + dist_charge_sq) );
-  T sc = (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  T dist_sq = dot(displ,displ);
+  T dist_charge_sq = (charge*charge)*dist_sq;
+  T a = 0.5 * ( 1 - dot(drift,displ) / std::sqrt(vsq*dist_sq) ) + dist_charge_sq / ( 10 * (4 + dist_charge_sq) );
+  T sc = (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*a*vsq*tau))/(a*vsq));
   //Apply the umrigar scaled drift.
   drift*=sc;
 }

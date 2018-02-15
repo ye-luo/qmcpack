@@ -61,6 +61,10 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   W.loadWalker(thisWalker,true);
   Psi.copyFromBuffer(W,w_buffer);
   myTimers[DMC_buffer]->stop();
+  // electron ion table ID
+  const int eI_tableID=1;
+  const DistanceTableData& eI_table(*W.DistTables[eI_tableID]);
+  const ParticleSet& ions(*(W.DistTables[eI_tableID]->Origin));
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR,RandomGen);
   int nAcceptTemp(0);
@@ -83,7 +87,12 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       //get the displacement
       GradType grad_iat=Psi.evalGrad(W,iat);
       PosType dr;
-      getScaledDrift(tauovermass, grad_iat, dr);
+      //getScaledDrift(tauovermass, grad_iat, dr);
+      RealType dist;
+      PosType displ;
+      const int nearest_ion = eI_table.get_first_neighbor(iat, dist, displ, false);
+      const RealType ion_Z = ions.Z[nearest_ion];
+      getScaledDriftUNR(tauovermass, grad_iat, dr, ion_Z, displ);
       dr += sqrttau * deltaR[iat];
       //RealType rr=dot(dr,dr);
       RealType rr=tauovermass*dot(deltaR[iat],deltaR[iat]);
@@ -113,7 +122,12 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         //Use the force of the particle iat
         //RealType scale=getDriftScale(m_tauovermass,grad_iat);
         //dr = W.R[iat]-W.activePos-scale*real(grad_iat);
-        getScaledDrift(tauovermass, grad_iat, dr);
+        //getScaledDrift(tauovermass, grad_iat, dr);
+        RealType dist;
+        PosType displ;
+        const int nearest_ion = eI_table.get_first_neighbor(iat, dist, displ, true);
+        const RealType ion_Z = ions.Z[nearest_ion];
+        getScaledDriftUNR(tauovermass, grad_iat, dr, ion_Z, displ);
         dr = W.R[iat] - W.activePos - dr;
         EstimatorRealType logGb = -oneover2tau*dot(dr,dr);
         RealType prob = ratio*ratio*std::exp(logGb-logGf);
