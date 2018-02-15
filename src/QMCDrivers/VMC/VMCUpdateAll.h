@@ -36,13 +36,9 @@ public:
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
-  /// Copy Constructor (disabled)
-  VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
-  /// Copy operator (disabled).
-  VMCUpdateAll& operator=(const VMCUpdateAll&)
-  {
-    return *this;
-  }
+  /// Copy constructor and copy assignment operator (disabled)
+  VMCUpdateAll(const VMCUpdateAll& a) = delete;
+  VMCUpdateAll& operator=(const VMCUpdateAll&) = delete;
 };
 
 }

@@ -70,7 +70,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
         W.setActive(iat);
-        mPosType dr;
+        PosType dr;
         if(UseDrift)
         {
           GradType grad_now=Psi.evalGrad(W,iat);

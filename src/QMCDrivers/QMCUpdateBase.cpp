@@ -44,14 +44,6 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, Q
   setDefaults();
 }
 
-///copy constructor
-QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a)
-  : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), nonLocalOps(a.W.getTotalNum()), RandomGen(a.RandomGen)
-  , branchEngine(0), Estimators(0), Traces(0)
-{
-  APP_ABORT("QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a) Not Allowed");
-}
-
 /// destructor
 QMCUpdateBase::~QMCUpdateBase()
 {
@@ -259,7 +251,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
     {
       W.setActive(iat);
       GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-      mPosType dr;
+      PosType dr;
       getScaledDrift(tauovermass,grad_now,dr);
       dr += sqrttau*deltaR[iat];
       if (!W.makeMoveAndCheck(iat,dr))

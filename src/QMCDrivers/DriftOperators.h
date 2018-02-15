@@ -33,8 +33,8 @@ inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<TG,D> >& ga)
  * @param qf quantum force
  * @param drift
  */
-template<class Tt, class TG, class T, unsigned D>
-inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& drift)
+template<class T, class TG, unsigned D>
+inline void getScaledDrift(T tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& drift)
 {
   //We convert the complex gradient to real and temporarily store in drift.
   convert(qf,drift);

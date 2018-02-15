@@ -48,17 +48,9 @@ namespace qmcplusplus
     bool put (xmlNodePtr cur);
 
   private:
-    /// Copy Constructor (disabled)
-      RMCUpdateAllWithDrift (const RMCUpdateAllWithDrift &
-			     a):QMCUpdateBase (a), Action (a.Action),
-      TransProb (a.TransProb)
-    {
-    }
-    /// Copy operator (disabled).
-    RMCUpdateAllWithDrift & operator= (const RMCUpdateAllWithDrift &)
-    {
-      return *this;
-    }
+    /// Copy constructor and copy assignment operator (disabled)
+    RMCUpdateAllWithDrift (const RMCUpdateAllWithDrift &) = delete;
+    RMCUpdateAllWithDrift & operator= (const RMCUpdateAllWithDrift &) = delete;
     std::vector < int >Action, TransProb;
 
     bool scaleDrift;

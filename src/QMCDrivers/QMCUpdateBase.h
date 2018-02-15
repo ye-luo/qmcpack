@@ -309,8 +309,9 @@ protected:
    */
   RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
-  ///copy constructor
-  QMCUpdateBase(const QMCUpdateBase& a);
+  ///copy constructor and copy assignment operator (disabled).
+  QMCUpdateBase(const QMCUpdateBase& a) = delete;
+  QMCUpdateBase& operator=(const QMCUpdateBase&) = delete;
 
   /** a VMC step to randomize awalker
    */
@@ -320,11 +321,7 @@ private:
 
   ///set default parameters
   void setDefaults();
-  /// Copy operator (disabled).
-  QMCUpdateBase& operator=(const QMCUpdateBase&)
-  {
-    return *this;
-  }
+
   ///
   NewTimer* InitWalkersTimer;
 };
