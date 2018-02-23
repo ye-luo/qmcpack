@@ -66,6 +66,6 @@ void CollectablesEstimator::add2Record(RecordListType& record)
 //    , WalkerIterator first, WalkerIterator last , RealType wgt)
 //{
 //  for(int i=0; i<refH.sizeOfCollectableResultBuffer(); ++i)
-//    scalars[i](W.Collectables[i],wgt);
+//    scalars[i](W.CollectableResultBuffer[i],wgt);
 //}
 }

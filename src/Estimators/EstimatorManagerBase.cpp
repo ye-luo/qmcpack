@@ -364,7 +364,7 @@ void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W)
   for(int i=0; i< Estimators.size(); i++)
     Estimators[i]->accumulate(W,W.begin(),W.end(),norm);
   if(Collectables)//collectables are normalized by QMC drivers
-    Collectables->accumulate_all(W.Collectables,1.0);
+    Collectables->accumulate_all(W.CollectableResultBuffer,1.0);
 }
 
 void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W
@@ -375,7 +375,7 @@ void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W
   for(int i=0; i< Estimators.size(); i++)
     Estimators[i]->accumulate(W,it,it_end,norm);
   if(Collectables)
-    Collectables->accumulate_all(W.Collectables,1.0);
+    Collectables->accumulate_all(W.CollectableResultBuffer,1.0);
 }
 
 void EstimatorManagerBase::getEnergyAndWeight(RealType& e, RealType& w, RealType& var)
