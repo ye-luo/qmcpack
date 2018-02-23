@@ -77,7 +77,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   PropertyList.Names=p.PropertyList.Names;
   PropertyList.Values=p.PropertyList.Values;
   PropertyHistory=p.PropertyHistory;
-  Collectables=p.Collectables;
+  CollectableResultBuffer=p.CollectableResultBuffer;
   //construct the distance tables with the same order
   if(p.DistTables.size())
   {

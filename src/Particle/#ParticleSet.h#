@@ -296,7 +296,7 @@ public:
    */
   inline void resetCollectables()
   {
-    std::fill(CollectableResultBuffer.begin(),CollectableResultBuffer.end(),0.0);
+    std::fill(Collectables.begin(),Collectables.end(),0.0);
   }
 
   /** update the internal data
