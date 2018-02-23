@@ -31,7 +31,7 @@ namespace qmcplusplus
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian()
-  :myIndex(0),numCollectableResultBuffer(0),EnableVirtualMoves(false)
+  :myIndex(0),CollectableResultBufferSize(0),EnableVirtualMoves(false)
 #if !defined(REMOVE_TRACEMANAGER)
   , id_sample(0),pid_sample(0),step_sample(0),gen_sample(0),age_sample(0),mult_sample(0),weight_sample(0),position_sample(0)
 {
@@ -182,7 +182,7 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
   myIndex=P.PropertyList.add(Observables.Names[0]);
   for(int i=1; i<Observables.size(); ++i)
     last_obs=P.PropertyList.add(Observables.Names[i]);
-  numCollectableResultBuffer=P.CollectableResultBuffer.size();
+  CollectableResultBufferSize=P.CollectableResultBuffer.size();
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
             << "\n    " << Observables.size()  << " to P::PropertyList "
             << "\n    " <<  P.CollectableResultBuffer.size() << " to P::CollectableResultBuffer "
@@ -201,10 +201,10 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
     auxH[i]->addObservables(Observables,collectables);
   if(collectables.size() != ncollects)
   {
-    APP_ABORT("  QMCHamiltonian::resetObservables numCollectableResultBuffer != ncollects");
+    APP_ABORT("  QMCHamiltonian::resetObservables CollectableResultBufferSize != ncollects");
   }
   myIndex=start;
-  numCollectableResultBuffer=ncollects;
+  CollectableResultBufferSize=ncollects;
 }
 
 void
@@ -646,12 +646,12 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   for(int i=0; i<auxH.size(); ++i)
     auxH[i]->add2Hamiltonian(qp,psi,*myclone);
   //sync indices
-  myclone->resetObservables(myIndex,numCollectableResultBuffer);
+  myclone->resetObservables(myIndex,CollectableResultBufferSize);
   //Hamiltonian needs to make sure qp.CollectableResultBuffer are the same as defined by the original Hamiltonian
-  if(numCollectableResultBuffer)
+  if(CollectableResultBufferSize)
   {
     qp.CollectableResultBuffer.clear();
-    qp.CollectableResultBuffer.resize(numCollectableResultBuffer);
+    qp.CollectableResultBuffer.resize(CollectableResultBufferSize);
   }
   //Assume tau is correct for the Kinetic energy operator and assign to the rest of the clones
   //Return_t tau = H[0]->Tau;

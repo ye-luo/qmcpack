@@ -146,7 +146,7 @@ public:
   ///return the size of CollectableResultBuffer
   inline int sizeOfCollectableResultBuffer() const
   {
-    return numCollectableResultBuffer;
+    return CollectableResultBufferSize;
   }
   ///return the value of the i-th observable
   inline RealType getObservable(int i) const
@@ -323,7 +323,7 @@ private:
   ///starting index
   int myIndex;
   ///size of CollectableResultBuffer
-  int numCollectableResultBuffer;
+  int CollectableResultBufferSize;
   ///enable virtual moves 
   bool EnableVirtualMoves;
   ///Current Local Energy
