@@ -166,7 +166,6 @@ void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  * This function is called before QMCDriver::run and following actions are taken:
  * - Initialize basic data to execute run function.
  * -- distance tables
- * -- resize deltaR and drift with the number of particles
  * -- assign cur to qmcNode
  * - process input file
  *   -- putQMCInfo: <parameter/> s for generic QMC
@@ -177,8 +176,6 @@ void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriver::process(xmlNodePtr cur)
 {
-  deltaR.resize(W.getTotalNum());
-  drift.resize(W.getTotalNum());
   qmcNode=cur;
   //process common parameters
   putQMCInfo(cur);

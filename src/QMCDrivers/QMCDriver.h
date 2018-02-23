@@ -354,12 +354,6 @@ protected:
   ///a list of timers
   std::vector<NewTimer*> myTimers;
 
-  ///temporary storage for drift
-  ParticleSet::ParticlePos_t drift;
-
-  ///temporary storage for random displacement
-  ParticleSet::ParticlePos_t deltaR;
-
   ///temporary buffer to accumulate data
   //ostrstream log_buffer;
 
