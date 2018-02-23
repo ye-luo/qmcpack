@@ -182,7 +182,7 @@ bool CSVMC::run()
       
     }//end-of-parallel for
     CurrentStep+=nSteps;
-    Estimators->stopBlock(estimatorClones);
+    Estimators->stopBlock(EstimatorAgentClones);
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -195,7 +195,7 @@ bool CSVMC::run()
     ADIOS_PROFILE::profile_adios_end_checkpoint(block);
   }//block
   ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
-  Estimators->stop(estimatorClones);
+  Estimators->stop(EstimatorAgentClones);
   for (int ip=0; ip<NumThreads; ++ip)
     CSMovers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
@@ -238,7 +238,7 @@ void CSVMC::resetRun()
   {
 	CSMovers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
-    estimatorClones.resize(NumThreads,0);
+    EstimatorAgentClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
  
@@ -247,9 +247,9 @@ void CSVMC::resetRun()
     for(int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
-      estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
-      estimatorClones[ip]->setCollectionMode(false);
+      EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);
+      EstimatorAgentClones[ip]->resetTargetParticleSet(*wClones[ip]);
+      EstimatorAgentClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
@@ -288,7 +288,7 @@ void CSVMC::resetRun()
         app_log() << os.str() << std::endl;
 
       CSMovers[ip]->put(qmcNode);
-      CSMovers[ip]->resetRun( branchClones[ip], estimatorClones[ip],traceClones[ip]);
+      CSMovers[ip]->resetRun( branchClones[ip], EstimatorAgentClones[ip],traceClones[ip]);
     }
 
   }
@@ -314,7 +314,7 @@ void CSVMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     CSMovers[ip]->put(qmcNode);
-    CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+    CSMovers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
      CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
     else

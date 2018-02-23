@@ -113,7 +113,7 @@ namespace qmcplusplus
 	  Movers[ip]->stopBlock (false);
 	}			//end-of-parallel for
 	CurrentStep += nSteps;
-	Estimators->stopBlock (estimatorClones);
+	Estimators->stopBlock (EstimatorAgentClones);
 	//why was this commented out? Are checkpoints stored some other way?
 	if (storeConfigs)
 	  recordBlock (block);
@@ -129,7 +129,7 @@ namespace qmcplusplus
           break;
         }
       }				//block
-    Estimators->stop (estimatorClones);
+    Estimators->stop (EstimatorAgentClones);
     //copy back the random states
     for (int ip = 0; ip < NumThreads; ++ip)
       *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
@@ -214,7 +214,7 @@ namespace qmcplusplus
       {
 	Movers.resize (NumThreads, 0);
 	branchClones.resize (NumThreads, 0);
-	estimatorClones.resize (NumThreads, 0);
+	EstimatorAgentClones.resize (NumThreads, 0);
 	traceClones.resize (NumThreads, 0);
 	Rng.resize (NumThreads, 0);
 	branchEngine->initReptile (W);
@@ -222,9 +222,9 @@ namespace qmcplusplus
 	for (int ip = 0; ip < NumThreads; ++ip)
 	  {
 	    std::ostringstream os;
-	    estimatorClones[ip] = new EstimatorManagerBase (*Estimators);	//,*hClones[ip]);
-	    estimatorClones[ip]->resetTargetParticleSet (*wClones[ip]);
-	    estimatorClones[ip]->setCollectionMode (false);
+	    EstimatorAgentClones[ip] = new EstimatorManagerBase (*Estimators);	//,*hClones[ip]);
+	    EstimatorAgentClones[ip]->resetTargetParticleSet (*wClones[ip]);
+	    EstimatorAgentClones[ip]->setCollectionMode (false);
 	    Rng[ip] =
 	      new RandomGenerator_t (*(RandomNumberControl::Children[ip]));
 #if !defined(REMOVE_TRACEMANAGER)
@@ -273,7 +273,7 @@ namespace qmcplusplus
     for (int ip = 0; ip < NumThreads; ++ip)
       {
 	Movers[ip]->put (qmcNode);
-	Movers[ip]->resetRun (branchClones[ip], estimatorClones[ip],
+	Movers[ip]->resetRun (branchClones[ip], EstimatorAgentClones[ip],
 			      traceClones[ip]);
 	// wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 	wClones[ip]->reptile = W.ReptileList[ip];

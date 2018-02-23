@@ -106,7 +106,7 @@ bool VMCSingleOMP::run()
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
-    Estimators->stopBlock(estimatorClones);
+    Estimators->stopBlock(EstimatorAgentClones);
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
@@ -120,7 +120,7 @@ bool VMCSingleOMP::run()
       break;
     }
   }//block
-  Estimators->stop(estimatorClones);
+  Estimators->stop(EstimatorAgentClones);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
@@ -158,16 +158,16 @@ void VMCSingleOMP::resetRun()
     movers_created=true;
     Movers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
-    estimatorClones.resize(NumThreads,0);
+    EstimatorAgentClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
     #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
-      estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
-      estimatorClones[ip]->setCollectionMode(false);
+      EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
+      EstimatorAgentClones[ip]->resetTargetParticleSet(*wClones[ip]);
+      EstimatorAgentClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
@@ -231,7 +231,7 @@ void VMCSingleOMP::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+    Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     else

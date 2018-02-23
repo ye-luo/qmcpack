@@ -78,7 +78,7 @@ protected:
   ///update engines
   std::vector<QMCUpdateBase*> Movers;
   ///estimator managers
-  std::vector<EstimatorManagerBase*> estimatorClones;
+  std::vector<EstimatorManagerBase*> EstimatorAgentClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
   ///Branch engines

@@ -114,7 +114,7 @@ bool VMCLinearOptOMP::run()
     }//end-of-parallel for
     CurrentStep+=nSteps;
 //       Estimators->accumulateCollectables(wClones,nSteps);
-    Estimators->stopBlock(estimatorClones);
+    Estimators->stopBlock(EstimatorAgentClones);
     #pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {
@@ -132,7 +132,7 @@ bool VMCLinearOptOMP::run()
   }//block
 //     app_log()<<" Blocks used   : "<<CurrentBlock<< std::endl;
 //     app_log()<<" Errorbars are : "<<errorbars<< std::endl;
-  Estimators->stop(estimatorClones);
+  Estimators->stop(EstimatorAgentClones);
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
@@ -483,7 +483,7 @@ void VMCLinearOptOMP::resetRun()
     Movers.resize(NumThreads,0);
 //       CSMovers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
-    estimatorClones.resize(NumThreads,0);
+    EstimatorAgentClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
     int nwtot=(W.getActiveWalkers()/NumThreads)*NumThreads;
@@ -495,9 +495,9 @@ void VMCLinearOptOMP::resetRun()
     for (int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
-      estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
-      estimatorClones[ip]->setCollectionMode(false);
+      EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
+      EstimatorAgentClones[ip]->resetTargetParticleSet(*wClones[ip]);
+      EstimatorAgentClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
@@ -527,7 +527,7 @@ void VMCLinearOptOMP::resetRun()
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
-        //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip]);
       }
       else
       {
@@ -550,7 +550,7 @@ void VMCLinearOptOMP::resetRun()
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
-        //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip]);
       }
       if (ip==0)
         app_log() << os.str() << std::endl;
@@ -571,8 +571,8 @@ void VMCLinearOptOMP::resetRun()
     int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
 //       CSMovers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
-//       CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+    Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip],traceClones[ip]);
+//       CSMovers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     else
