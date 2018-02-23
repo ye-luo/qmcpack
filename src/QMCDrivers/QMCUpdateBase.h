@@ -282,7 +282,7 @@ protected:
   ///branch engine
   BranchEngineType* branchEngine;
   ///estimator
-  EstimatorManagerBase* Estimators;
+  EstimatorManagerBase* EstimatorAgent;
   ///parameters
   ParameterSet myParams;
   ///1/Mass per species
