@@ -368,7 +368,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
   //accumulate collectables and energies for scalar.dat
   EstimatorRealType wgt_inv=WalkerController->NumContexts/WalkerController->EnsembleProperty.Weight;
-  walkers.Collectables *= wgt_inv;
+  walkers.CollectableResultBuffer *= wgt_inv;
   MyEstimator->accumulate(walkers);
 }
 

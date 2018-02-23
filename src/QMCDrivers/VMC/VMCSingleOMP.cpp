@@ -71,7 +71,7 @@ bool VMCSingleOMP::run()
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
-  const bool has_collectables=W.Collectables.size();
+  const bool has_collectables=W.CollectableResultBuffer.size();
   for (int block=0; block<nBlocks; ++block)
   {
     vmc_loop.start();
@@ -93,7 +93,7 @@ bool VMCSingleOMP::run()
         bool recompute=(nBlocksBetweenRecompute && (step+1) == nSteps && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
         Movers[ip]->advanceWalkers(wit,wit_end,recompute);
         if(has_collectables)
-          wClones[ip]->Collectables *= cnorm;
+          wClones[ip]->CollectableResultBuffer *= cnorm;
         Movers[ip]->accumulate(wit,wit_end);
         ++now_loc;
         //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);

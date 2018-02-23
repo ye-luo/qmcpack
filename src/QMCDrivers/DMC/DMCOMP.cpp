@@ -303,12 +303,12 @@ bool DMCOMP::run()
       prof.pop(); //close dmc_advance
 
       prof.push("dmc_branch");
-      //Collectables are weighted but not yet normalized
-      if(W.Collectables.size())
+      //CollectableResultBuffer are weighted but not yet normalized
+      if(W.CollectableResultBuffer.size())
       {
         // only when collectable is not empty, need to generalize for W != wClones[0]
         for(int ip=1; ip<NumThreads; ++ip)
-          W.Collectables += wClones[ip]->Collectables;
+          W.CollectableResultBuffer += wClones[ip]->CollectableResultBuffer;
       }
       branchEngine->branch(CurrentStep, W, branchClones);
       //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {

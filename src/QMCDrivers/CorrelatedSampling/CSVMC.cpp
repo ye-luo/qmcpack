@@ -151,7 +151,7 @@ bool CSVMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks,traceClones);
 #endif
-  const bool has_collectables=W.Collectables.size();
+  const bool has_collectables=W.CollectableResultBuffer.size();
   ADIOS_PROFILE::profile_adios_init(nBlocks);
   for (int block=0; block<nBlocks; ++block)
   {
@@ -172,7 +172,7 @@ bool CSVMC::run()
         wClones[ip]->resetCollectables();
         CSMovers[ip]->advanceWalkers(wit,wit_end,false);
         if(has_collectables)
-          wClones[ip]->Collectables *= cnorm;
+          wClones[ip]->CollectableResultBuffer *= cnorm;
         CSMovers[ip]->accumulate(wit,wit_end);
         ++now_loc;
         if (Period4WalkerDump&& now_loc%Period4WalkerDump==0)

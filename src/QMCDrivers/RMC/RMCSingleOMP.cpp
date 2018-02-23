@@ -75,7 +75,7 @@ namespace qmcplusplus
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->startRun (nBlocks, traceClones);
 #endif
-    const bool has_collectables = W.Collectables.size ();
+    const bool has_collectables = W.CollectableResultBuffer.size ();
 
     LoopTimer rmc_loop;
     RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
@@ -101,7 +101,7 @@ namespace qmcplusplus
 	      wClones[ip]->resetCollectables ();
 	      Movers[ip]->advanceWalkers (wit, wit_end, false);
 	      if (has_collectables)
-		wClones[ip]->Collectables *= cnorm;
+		wClones[ip]->CollectableResultBuffer *= cnorm;
 	      Movers[ip]->accumulate (wit, wit_end);
 
 	      ++now_loc;
