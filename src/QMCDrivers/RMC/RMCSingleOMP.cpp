@@ -69,7 +69,7 @@ namespace qmcplusplus
   {
     resetRun ();
     //start the main estimator
-    Estimators->start (nBlocks);
+    EstimatorAgent->start (nBlocks);
     for (int ip = 0; ip < NumThreads; ++ip)
       Movers[ip]->startRun (nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -113,7 +113,7 @@ namespace qmcplusplus
 	  Movers[ip]->stopBlock (false);
 	}			//end-of-parallel for
 	CurrentStep += nSteps;
-	Estimators->stopBlock (EstimatorAgentClones);
+	EstimatorAgent->stopBlock (EstimatorAgentClones);
 	//why was this commented out? Are checkpoints stored some other way?
 	if (storeConfigs)
 	  recordBlock (block);
@@ -129,7 +129,7 @@ namespace qmcplusplus
           break;
         }
       }				//block
-    Estimators->stop (EstimatorAgentClones);
+    EstimatorAgent->stop (EstimatorAgentClones);
     //copy back the random states
     for (int ip = 0; ip < NumThreads; ++ip)
       *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
@@ -222,7 +222,7 @@ namespace qmcplusplus
 	for (int ip = 0; ip < NumThreads; ++ip)
 	  {
 	    std::ostringstream os;
-	    EstimatorAgentClones[ip] = new EstimatorManagerBase (*Estimators);	//,*hClones[ip]);
+	    EstimatorAgentClones[ip] = new EstimatorManagerBase (*EstimatorAgent);	//,*hClones[ip]);
 	    EstimatorAgentClones[ip]->resetTargetParticleSet (*wClones[ip]);
 	    EstimatorAgentClones[ip]->setCollectionMode (false);
 	    Rng[ip] =

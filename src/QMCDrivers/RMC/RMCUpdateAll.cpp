@@ -600,7 +600,7 @@ namespace qmcplusplus
 					  WalkerIter_t it_end)
   {
     if (vmcToDoSteps == 0 && equilToDoSteps == 0)
-      Estimators->accumulate (W, it, it_end);
+      EstimatorAgent->accumulate (W, it, it_end);
     else;
 
   }

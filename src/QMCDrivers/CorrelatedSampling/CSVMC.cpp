@@ -144,7 +144,7 @@ bool CSVMC::run()
 {
   resetRun();
   //start the main estimator
-  Estimators->start(nBlocks);
+  EstimatorAgent->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     CSMovers[ip]->startRun(nBlocks,false);
 
@@ -182,7 +182,7 @@ bool CSVMC::run()
       
     }//end-of-parallel for
     CurrentStep+=nSteps;
-    Estimators->stopBlock(EstimatorAgentClones);
+    EstimatorAgent->stopBlock(EstimatorAgentClones);
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -195,7 +195,7 @@ bool CSVMC::run()
     ADIOS_PROFILE::profile_adios_end_checkpoint(block);
   }//block
   ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
-  Estimators->stop(EstimatorAgentClones);
+  EstimatorAgent->stop(EstimatorAgentClones);
   for (int ip=0; ip<NumThreads; ++ip)
     CSMovers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
@@ -247,7 +247,7 @@ void CSVMC::resetRun()
     for(int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);
+      EstimatorAgentClones[ip]= new EstimatorManagerBase(*EstimatorAgent);
       EstimatorAgentClones[ip]->resetTargetParticleSet(*wClones[ip]);
       EstimatorAgentClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)

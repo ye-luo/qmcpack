@@ -191,7 +191,7 @@ public:
 
   inline void accumulate(WalkerIter_t it, WalkerIter_t it_end)
   {
-    Estimators->accumulate(W,it,it_end);
+    EstimatorAgent->accumulate(W,it,it_end);
   }
 
   /** advance walkers executed at each step

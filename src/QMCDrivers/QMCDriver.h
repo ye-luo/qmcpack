@@ -173,15 +173,15 @@ public:
 
   int addObservable(const std::string& aname)
   {
-    if(Estimators)
-      return Estimators->addObservable(aname.c_str());
+    if(EstimatorAgent)
+      return EstimatorAgent->addObservable(aname.c_str());
     else
       return -1;
   }
 
   RealType getObservable(int i)
   {
-    return Estimators->getObservable(i);
+    return EstimatorAgent->getObservable(i);
   }
 
   void setTau(RealType i)
@@ -202,7 +202,7 @@ public:
   //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager
-  EstimatorManagerBase* Estimators;
+  EstimatorManagerBase* EstimatorAgent;
 
   ///Traces manager
   TraceManager* Traces;
@@ -366,7 +366,7 @@ protected:
   //PooledData<RealType> HamPool;
 
   ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), psiPool(a.psiPool), Estimators(0) {}
+  QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), psiPool(a.psiPool), EstimatorAgent(0) {}
 
   bool putQMCInfo(xmlNodePtr cur);
 
@@ -386,7 +386,7 @@ protected:
    * @param dumpwalkers if true, dump walkers
    *
    * Accumulate energy and weight is written to a hdf5 file.
-   * Finialize the estimators
+   * Finialize the EstimatorAgent
    */
   bool finalize(int block, bool dumpwalkers=true);
 

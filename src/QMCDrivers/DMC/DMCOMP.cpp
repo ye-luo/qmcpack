@@ -68,7 +68,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
   m_param.put(cur);
   put(cur);
   //app_log()<<"DMCOMP::resetComponents"<< std::endl;
-  Estimators->reset();
+  EstimatorAgent->reset();
   int nw_multi=branchEngine->resetRun(cur);
   if(nw_multi>1)
   {
@@ -86,7 +86,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     delete Movers[ip];
     delete EstimatorAgentClones[ip];
     delete branchClones[ip];
-    EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);
+    EstimatorAgentClones[ip]= new EstimatorManagerBase(*EstimatorAgent);
     EstimatorAgentClones[ip]->setCollectionMode(false);
     branchClones[ip] = new BranchEngineType(*branchEngine);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -160,7 +160,7 @@ void DMCOMP::resetUpdateEngines()
     #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);
+      EstimatorAgentClones[ip]= new EstimatorManagerBase(*EstimatorAgent);
       EstimatorAgentClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
@@ -240,8 +240,8 @@ bool DMCOMP::run()
   bool variablePop = (Reconfiguration == "no");
   resetUpdateEngines();
   //estimator does not need to collect data
-  Estimators->setCollectionMode(true);
-  Estimators->start(nBlocks);
+  EstimatorAgent->setCollectionMode(true);
+  EstimatorAgent->start(nBlocks);
   for(int ip=0; ip<NumThreads; ip++)
     Movers[ip]->startRun(nBlocks,false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -258,7 +258,7 @@ bool DMCOMP::run()
   do // block
   {
     dmc_loop.start();
-    Estimators->startBlock(nSteps);
+    EstimatorAgent->startBlock(nSteps);
     for(int ip=0; ip<NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
 
@@ -321,7 +321,7 @@ bool DMCOMP::run()
       prof.pop(); //close dmc_branch
     }
 //       branchEngine->debugFWconfig();
-    Estimators->stopBlock(acceptRatio());
+    EstimatorAgent->stopBlock(acceptRatio());
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
@@ -348,7 +348,7 @@ bool DMCOMP::run()
   //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
   for(int ip=0; ip<NumThreads; ip++)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
-  Estimators->stop();
+  EstimatorAgent->stop();
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
@@ -361,11 +361,11 @@ bool DMCOMP::run()
 void DMCOMP::benchMark()
 {
   //set the collection mode for the estimator
-  Estimators->setCollectionMode(true);
-  IndexType PopIndex = Estimators->addProperty("Population");
-  IndexType EtrialIndex = Estimators->addProperty("Etrial");
-  //Estimators->reportHeader(AppendRun);
-  //Estimators->reset();
+  EstimatorAgent->setCollectionMode(true);
+  IndexType PopIndex = EstimatorAgent->addProperty("Population");
+  IndexType EtrialIndex = EstimatorAgent->addProperty("Etrial");
+  //EstimatorAgent->reportHeader(AppendRun);
+  //EstimatorAgent->reset();
   IndexType block = 0;
   RealType Eest = branchEngine->getEref();
   //resetRun();

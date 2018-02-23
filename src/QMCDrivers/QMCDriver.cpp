@@ -51,7 +51,7 @@ namespace qmcplusplus
 
 QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
   : MPIObjectBase(0), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
-    Estimators(0),Traces(0), qmcNode(NULL), wOut(0)
+    EstimatorAgent(0),Traces(0), qmcNode(NULL), wOut(0)
 {
   ResetRandom=false;
   AppendRun=false;
@@ -172,7 +172,7 @@ void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  *   -- putQMCInfo: <parameter/> s for generic QMC
  *   -- put : extra data by derived classes
  * - initialize branchEngine to accumulate energies
- * - initialize Estimators
+ * - initialize EstimatorAgent
  * - initialize Walkers
  */
 void QMCDriver::process(xmlNodePtr cur)
@@ -195,11 +195,11 @@ void QMCDriver::process(xmlNodePtr cur)
   //execute the put function implemented by the derived classes
   put(cur);
   //create and initialize estimator
-  Estimators = branchEngine->getEstimatorManager();
-  if(Estimators==0)
+  EstimatorAgent = branchEngine->getEstimatorManager();
+  if(EstimatorAgent==0)
   {
-    Estimators = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(Estimators);
+    EstimatorAgent = new EstimatorManagerBase(myComm);
+    branchEngine->setEstimatorManager(EstimatorAgent);
     branchEngine->read(h5FileRoot);
   }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -211,7 +211,7 @@ void QMCDriver::process(xmlNodePtr cur)
   Traces->put(traces_xml,allow_traces,RootName);
 #endif
   branchEngine->put(cur);
-  Estimators->put(W,H,cur);
+  EstimatorAgent->put(W,H,cur);
   if(wOut==0)
     wOut = new HDFWalkerOutput(W,RootName,myComm);
   branchEngine->start(RootName);
@@ -463,7 +463,7 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
     if(DumpConfig && dumpwalkers) wOut->dump(W, block);
     delete wOut;
     wOut=0;
-    //Estimators->finalize();
+    //EstimatorAgent->finalize();
     nTargetWalkers = W.getActiveWalkers();
     MyCounter++;
     infoSummary.flush();

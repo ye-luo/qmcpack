@@ -32,14 +32,14 @@ namespace qmcplusplus
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w), Psi(psi), Guide(guide), H(h), nonLocalOps(w.getTotalNum()), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+  : W(w), Psi(psi), Guide(guide), H(h), nonLocalOps(w.getTotalNum()), RandomGen(rg), branchEngine(0), EstimatorAgent(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w), Psi(psi), H(h), nonLocalOps(w.getTotalNum()), Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+  : W(w), Psi(psi), H(h), nonLocalOps(w.getTotalNum()), Guide(psi), RandomGen(rg), branchEngine(0), EstimatorAgent(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
@@ -47,7 +47,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, Q
 ///copy constructor
 QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a)
   : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), nonLocalOps(a.W.getTotalNum()), RandomGen(a.RandomGen)
-  , branchEngine(0), Estimators(0), Traces(0)
+  , branchEngine(0), EstimatorAgent(0), Traces(0)
 {
   APP_ABORT("QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a) Not Allowed");
 }
@@ -95,7 +95,7 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
 
 void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est)
 {
-  Estimators=est;
+  EstimatorAgent=est;
   branchEngine=brancher;
   branchEngine->setEstimatorManager(est);
   NumPtcl = W.getTotalNum();
@@ -140,7 +140,7 @@ void QMCUpdateBase::resetEtrial(RealType et)
 
 void QMCUpdateBase::startRun(int blocks, bool record)
 { 
-  Estimators->start(blocks,record);
+  EstimatorAgent->start(blocks,record);
 #if !defined(REMOVE_TRACEMANAGER)
   if(!Traces)
   {
@@ -153,7 +153,7 @@ void QMCUpdateBase::startRun(int blocks, bool record)
 
 void QMCUpdateBase::stopRun()
 {
-  Estimators->stop();
+  EstimatorAgent->stop();
 }
 
 //ugly, but will use until general usage of stopRun is clear
@@ -168,7 +168,7 @@ void QMCUpdateBase::stopRun2()
 
 void QMCUpdateBase::startBlock(int steps)
 {
-  Estimators->startBlock(steps);
+  EstimatorAgent->startBlock(steps);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
 #endif
@@ -181,7 +181,7 @@ void QMCUpdateBase::startBlock(int steps)
 
 void QMCUpdateBase::stopBlock(bool collectall)
 {
-  Estimators->stopBlock(acceptRatio(),collectall);
+  EstimatorAgent->stopBlock(acceptRatio(),collectall);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopBlock();
 #endif

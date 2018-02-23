@@ -82,7 +82,7 @@ bool VMCLinearOptOMP::run()
   NumOptimizables=dummyOptVars[0].size();
   resizeForOpt(NumOptimizables);
   //start the main estimator
-  Estimators->start(nBlocks);
+  EstimatorAgent->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
 //     RealType target_errorbars;
@@ -113,8 +113,8 @@ bool VMCLinearOptOMP::run()
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for
     CurrentStep+=nSteps;
-//       Estimators->accumulateCollectables(wClones,nSteps);
-    Estimators->stopBlock(EstimatorAgentClones);
+//       EstimatorAgent->accumulateCollectables(wClones,nSteps);
+    EstimatorAgent->stopBlock(EstimatorAgentClones);
     #pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {
@@ -132,7 +132,7 @@ bool VMCLinearOptOMP::run()
   }//block
 //     app_log()<<" Blocks used   : "<<CurrentBlock<< std::endl;
 //     app_log()<<" Errorbars are : "<<errorbars<< std::endl;
-  Estimators->stop(EstimatorAgentClones);
+  EstimatorAgent->stop(EstimatorAgentClones);
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
@@ -495,7 +495,7 @@ void VMCLinearOptOMP::resetRun()
     for (int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
+      EstimatorAgentClones[ip]= new EstimatorManagerBase(*EstimatorAgent);//,*hClones[ip]);
       EstimatorAgentClones[ip]->resetTargetParticleSet(*wClones[ip]);
       EstimatorAgentClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)

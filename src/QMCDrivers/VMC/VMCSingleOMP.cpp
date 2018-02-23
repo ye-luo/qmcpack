@@ -60,7 +60,7 @@ bool VMCSingleOMP::run()
 {
   resetRun();
   //start the main estimator
-  Estimators->start(nBlocks);
+  EstimatorAgent->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -104,9 +104,9 @@ bool VMCSingleOMP::run()
       }
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for
-    //Estimators->accumulateCollectables(wClones,nSteps);
+    //EstimatorAgent->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
-    Estimators->stopBlock(EstimatorAgentClones);
+    EstimatorAgent->stopBlock(EstimatorAgentClones);
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
@@ -120,7 +120,7 @@ bool VMCSingleOMP::run()
       break;
     }
   }//block
-  Estimators->stop(EstimatorAgentClones);
+  EstimatorAgent->stop(EstimatorAgentClones);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
 #if !defined(REMOVE_TRACEMANAGER)
@@ -165,7 +165,7 @@ void VMCSingleOMP::resetRun()
     for(int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      EstimatorAgentClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
+      EstimatorAgentClones[ip]= new EstimatorManagerBase(*EstimatorAgent);//,*hClones[ip]);
       EstimatorAgentClones[ip]->resetTargetParticleSet(*wClones[ip]);
       EstimatorAgentClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
