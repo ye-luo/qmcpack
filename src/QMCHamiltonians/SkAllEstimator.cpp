@@ -135,11 +135,11 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     {
       int kc=myIndex;
       for(int k=0; k<NumK; k++,kc++)
-        P.Collectables[kc] += values[k];
+        P.CollectableResultBuffer[kc] += values[k];
       for(int k=0; k<NumK; k++,kc++)
-        P.Collectables[kc] += w*RhokTot_r[k];
+        P.CollectableResultBuffer[kc] += w*RhokTot_r[k];
       for(int k=0; k<NumK; k++,kc++)
-        P.Collectables[kc] += w*RhokTot_i[k];
+        P.CollectableResultBuffer[kc] += w*RhokTot_i[k];
     }
     else
     {
@@ -170,11 +170,11 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     {
       int kc=myIndex;
       for(int k=0; k<NumK; k++,kc++)
-        P.Collectables[kc] += values[k];
+        P.CollectableResultBuffer[kc] += values[k];
       for(int k=0; k<NumK; k++,kc++)
-        P.Collectables[kc] += w*rhok[k].real();
+        P.CollectableResultBuffer[kc] += w*rhok[k].real();
       for(int k=0; k<NumK; k++,kc++)
-        P.Collectables[kc] += w*rhok[k].imag();
+        P.CollectableResultBuffer[kc] += w*rhok[k].imag();
     }
     else
     {

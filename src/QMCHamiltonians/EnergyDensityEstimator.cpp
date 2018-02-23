@@ -316,7 +316,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     for(int i=0; i<spacegrids.size(); i++)
     {
       SpaceGrid& sg = *spacegrids[i];
-      sg.evaluate(R,EDValues,P.Collectables,particles_outside,dtab);
+      sg.evaluate(R,EDValues,P.CollectableResultBuffer,particles_outside,dtab);
     }
     //Accumulate energy density of particles outside any spacegrid
     int bi,v;
@@ -327,7 +327,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       {
         for(bi=outside_buffer_offset,v=0; bi<bimax; bi++,v++)
         {
-          P.Collectables[bi] += EDValues(p,v);
+          P.CollectableResultBuffer[bi] += EDValues(p,v);
         }
       }
     }
@@ -358,12 +358,12 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       for(int i=0; i<spacegrids.size(); i++)
       {
         SpaceGrid& sg = *spacegrids[i];
-        sg.sum(P.Collectables,edtmp);
+        sg.sum(P.CollectableResultBuffer,edtmp);
         for(int v=0; v<nvals; v++)
           edvals[v]+=edtmp[v];
       }
       for(int v=0; v<nvals; v++)
-        edvals[v]+=P.Collectables[outside_buffer_offset+v];
+        edvals[v]+=P.CollectableResultBuffer[outside_buffer_offset+v];
       //app_log()<<"eval ES Dsum"<<cnt<<" "<<edvals[W]<< std::endl;
       app_log()<<thread<<" eval ES "<<cnt<<" "<<edvals[T]<<" "<<edvals[V]<<" "<<edvals[T]+edvals[V]<< std::endl;
       cnt++;
@@ -381,8 +381,8 @@ void EnergyDensityEstimator::write_Collectables( std::string& label,int& cnt,Par
   //for(int v=0;v<nEDValues;v++){
   int ii = spacegrids[0]->buffer_offset;
   int io = outside_buffer_offset;
-  double Ti = P.Collectables[ii+1]/P.Collectables[ii]*12.0;
-  double To = P.Collectables[io+1]/P.Collectables[io]*12.0;
+  double Ti = P.CollectableResultBuffer[ii+1]/P.CollectableResultBuffer[ii]*12.0;
+  double To = P.CollectableResultBuffer[io+1]/P.CollectableResultBuffer[io]*12.0;
   app_log()<<"EDcoll "<<label<<cnt<<" "<<Ti<<" "<<To<< std::endl;
   //}
 }
@@ -407,14 +407,14 @@ void EnergyDensityEstimator::write_nonzero_domains(const ParticleSet& P)
     int n=outside_buffer_offset+i*nEDValues;
     for(int v=0; v<nEDValues; v++)
     {
-      nonzero = nonzero || std::abs(P.Collectables[n+v])>1e-8;
+      nonzero = nonzero || std::abs(P.CollectableResultBuffer[n+v])>1e-8;
     }
     if(nonzero)
     {
-//      fprintf(stdout,"  %d %e %e %e %e %e %e\n",i,P.Collectables[n],
-      fprintf(stdout,"  %d %e %e %e \n",i,P.Collectables[n],
-              P.Collectables[n+1],
-              P.Collectables[n+2]);
+//      fprintf(stdout,"  %d %e %e %e %e %e %e\n",i,P.CollectableResultBuffer[n],
+      fprintf(stdout,"  %d %e %e %e \n",i,P.CollectableResultBuffer[n],
+              P.CollectableResultBuffer[n+1],
+              P.CollectableResultBuffer[n+2]);
     }
   }
 }

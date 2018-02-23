@@ -646,10 +646,10 @@ namespace qmcplusplus
       for(int n=0;n<basis_size2;++n)
       {
         Value_t val = NDM(n);
-        P.Collectables[ij] += real(val);
+        P.CollectableResultBuffer[ij] += real(val);
         ij++;
 #if defined(QMC_COMPLEX)
-        P.Collectables[ij] += imag(val);
+        P.CollectableResultBuffer[ij] += imag(val);
         ij++;
 #endif
       }
@@ -664,10 +664,10 @@ namespace qmcplusplus
         for(int n=0;n<basis_size2;++n)
         {
           Value_t val = EDM(n);
-          P.Collectables[ij] += real(val);
+          P.CollectableResultBuffer[ij] += real(val);
           ij++;
 #if defined(QMC_COMPLEX)
-          P.Collectables[ij] += imag(val);
+          P.CollectableResultBuffer[ij] += imag(val);
           ij++;
 #endif
         }
@@ -842,10 +842,10 @@ namespace qmcplusplus
           for(int j=0;j<basis_size;++j)
           {
             Value_t val = phi_i*integrated_values[j];
-            P.Collectables[ij] += real(val);
+            P.CollectableResultBuffer[ij] += real(val);
             ij++;
 #if defined(QMC_COMPLEX)
-            P.Collectables[ij] += imag(val);
+            P.CollectableResultBuffer[ij] += imag(val);
             ij++;
 #endif
           }
@@ -860,10 +860,10 @@ namespace qmcplusplus
             for(int j=0;j<basis_size;++j)
             {
               Value_t val = ephi_i*integrated_values[j];
-              P.Collectables[ij] += real(val);
+              P.CollectableResultBuffer[ij] += real(val);
               ij++;
 #if defined(QMC_COMPLEX)
-              P.Collectables[ij] += imag(val);
+              P.CollectableResultBuffer[ij] += imag(val);
               ij++;
 #endif
             }

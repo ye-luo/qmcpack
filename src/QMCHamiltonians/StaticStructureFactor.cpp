@@ -141,13 +141,13 @@ namespace qmcplusplus
       int kc      = myIndex + s*2*nkpoints;
       //int kstart  = s*nkptot;
       //for(int k=kstart;k<kstart+nkpoints;++k,++kc)
-      //  P.Collectables[kc] += w*rhok_r(k);
+      //  P.CollectableResultBuffer[kc] += w*rhok_r(k);
       //for(int k=kstart;k<kstart+nkpoints;++k,++kc)
-      //  P.Collectables[kc] += w*rhok_i(k);
+      //  P.CollectableResultBuffer[kc] += w*rhok_i(k);
       for(int k=0;k<nkpoints;++k,++kc)
-        P.Collectables[kc] += w*rhok_r(s,k);
+        P.CollectableResultBuffer[kc] += w*rhok_r(s,k);
       for(int k=0;k<nkpoints;++k,++kc)
-        P.Collectables[kc] += w*rhok_i(s,k);
+        P.CollectableResultBuffer[kc] += w*rhok_i(s,k);
     }
     return 0.0;
   }

@@ -67,7 +67,7 @@ SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
     Vector<RealType>::const_iterator iit_r(RhokTot_r.begin()),iit_r_end(RhokTot_r.end());
     Vector<RealType>::const_iterator iit_i(RhokTot_i.begin()),iit_i_end(RhokTot_i.end());
     for(int i=myIndex; iit_r != iit_r_end; ++iit_r,++iit_i,++i)
-      P.Collectables[i]+=OneOverN*((*iit_r)*(*iit_r)+(*iit_i)*(*iit_i));
+      P.CollectableResultBuffer[i]+=OneOverN*((*iit_r)*(*iit_r)+(*iit_i)*(*iit_i));
   }
   else
   {
@@ -85,7 +85,7 @@ SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
   {
     Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
     for(int i=myIndex; iit != iit_end; ++iit,++i)
-      P.Collectables[i]+=OneOverN*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
+      P.CollectableResultBuffer[i]+=OneOverN*((*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag());
   }
   else
   {

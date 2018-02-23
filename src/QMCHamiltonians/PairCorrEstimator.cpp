@@ -114,7 +114,7 @@ void PairCorrEstimator::resetTargetParticleSet(ParticleSet& P)
 
 PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 {
-  BufferType& collectables(P.Collectables);
+  BufferType& collectables(P.CollectableResultBuffer);
   const DistanceTableData&  dii(*P.DistTables[0]);
   if(dii.DTType == DT_SOA)
   {

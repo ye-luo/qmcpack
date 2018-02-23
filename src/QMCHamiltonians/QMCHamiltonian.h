@@ -143,10 +143,10 @@ public:
   {
     return Observables.size();
   }
-  ///return the size of collectables
-  inline int sizeOfCollectables() const
+  ///return the size of CollectableResultBuffer
+  inline int sizeOfCollectableResultBuffer() const
   {
-    return numCollectables;
+    return numCollectableResultBuffer;
   }
   ///return the value of the i-th observable
   inline RealType getObservable(int i) const
@@ -322,8 +322,8 @@ private:
 private:
   ///starting index
   int myIndex;
-  ///starting index
-  int numCollectables;
+  ///size of CollectableResultBuffer
+  int numCollectableResultBuffer;
   ///enable virtual moves 
   bool EnableVirtualMoves;
   ///Current Local Energy

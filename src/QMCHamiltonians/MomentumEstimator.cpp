@@ -86,7 +86,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     RealType w=tWalker->Weight*norm_nofK;
     int j=myIndex;
     for (int ik=0; ik<nofK.size(); ++ik,++j)
-      P.Collectables[j]+= w*nofK[ik];
+      P.CollectableResultBuffer[j]+= w*nofK[ik];
   }
   else
   {

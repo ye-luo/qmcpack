@@ -228,7 +228,7 @@ namespace qmcplusplus
           int point=offset;
           for(int d=0;d<DIM;++d)
             point += gdims[d]*((int)(grid[d]*(u[d]-std::floor(u[d])))); //periodic only
-          P.Collectables[point] += w;
+          P.CollectableResultBuffer[point] += w;
         //}
       }
     return 0.0;
@@ -388,7 +388,7 @@ namespace qmcplusplus
           int point=offset;
           for(int d=0;d<DIM;++d)
             point += gdims[d]*((int)(grid[d]*(u[d]-std::floor(u[d])))); //periodic only
-          W.Collectables[point] += weight;
+          W.CollectableResultBuffer[point] += weight;
           //}
         }
     }

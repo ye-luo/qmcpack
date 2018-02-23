@@ -31,7 +31,7 @@ namespace qmcplusplus
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian()
-  :myIndex(0),numCollectables(0),EnableVirtualMoves(false)
+  :myIndex(0),numCollectableResultBuffer(0),EnableVirtualMoves(false)
 #if !defined(REMOVE_TRACEMANAGER)
   , id_sample(0),pid_sample(0),step_sample(0),gen_sample(0),age_sample(0),mult_sample(0),weight_sample(0),position_sample(0)
 {
@@ -172,20 +172,20 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
   //first add properties to Observables
   Observables.clear();
   //ParticleSet::mcObservables (large data, e.g. density) are accumulated while evaluations
-  P.Collectables.clear();
-  P.Collectables.rewind();
+  P.CollectableResultBuffer.clear();
+  P.CollectableResultBuffer.rewind();
   for(int i=0; i<H.size(); ++i)
-    H[i]->addObservables(Observables,P.Collectables);
+    H[i]->addObservables(Observables,P.CollectableResultBuffer);
   for(int i=0; i<auxH.size(); ++i)
-    auxH[i]->addObservables(Observables,P.Collectables);
+    auxH[i]->addObservables(Observables,P.CollectableResultBuffer);
   int last_obs;
   myIndex=P.PropertyList.add(Observables.Names[0]);
   for(int i=1; i<Observables.size(); ++i)
     last_obs=P.PropertyList.add(Observables.Names[i]);
-  numCollectables=P.Collectables.size();
+  numCollectableResultBuffer=P.CollectableResultBuffer.size();
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
             << "\n    " << Observables.size()  << " to P::PropertyList "
-            << "\n    " <<  P.Collectables.size() << " to P::Collectables "
+            << "\n    " <<  P.CollectableResultBuffer.size() << " to P::CollectableResultBuffer "
             << "\n    starting Index of the observables in P::PropertyList = " << myIndex << std::endl;
   return Observables.size();
 }
@@ -201,10 +201,10 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
     auxH[i]->addObservables(Observables,collectables);
   if(collectables.size() != ncollects)
   {
-    APP_ABORT("  QMCHamiltonian::resetObservables numCollectables != ncollects");
+    APP_ABORT("  QMCHamiltonian::resetObservables numCollectableResultBuffer != ncollects");
   }
   myIndex=start;
-  numCollectables=ncollects;
+  numCollectableResultBuffer=ncollects;
 }
 
 void
@@ -646,12 +646,12 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   for(int i=0; i<auxH.size(); ++i)
     auxH[i]->add2Hamiltonian(qp,psi,*myclone);
   //sync indices
-  myclone->resetObservables(myIndex,numCollectables);
-  //Hamiltonian needs to make sure qp.Collectables are the same as defined by the original Hamiltonian
-  if(numCollectables)
+  myclone->resetObservables(myIndex,numCollectableResultBuffer);
+  //Hamiltonian needs to make sure qp.CollectableResultBuffer are the same as defined by the original Hamiltonian
+  if(numCollectableResultBuffer)
   {
-    qp.Collectables.clear();
-    qp.Collectables.resize(numCollectables);
+    qp.CollectableResultBuffer.clear();
+    qp.CollectableResultBuffer.resize(numCollectableResultBuffer);
   }
   //Assume tau is correct for the Kinetic energy operator and assign to the rest of the clones
   //Return_t tau = H[0]->Tau;

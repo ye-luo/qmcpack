@@ -109,7 +109,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
     RealType my_kinetic = vec_minus_over_2m[ispec]*laplacian(P.G[iat],P.L[iat]);
     if (hdf5_out)
     {
-      P.Collectables[h5_index + ispec] += my_kinetic*wgt;
+      P.CollectableResultBuffer[h5_index + ispec] += my_kinetic*wgt;
     }
     species_kinetic[ispec] += my_kinetic;
   }

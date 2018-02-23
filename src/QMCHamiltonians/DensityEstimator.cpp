@@ -58,9 +58,9 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
       int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
       int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
       int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-      P.Collectables[getGridIndex(i,j,k)]+=wgt;//1.0;
-      //	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-      //HACK!	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
+      P.CollectableResultBuffer[getGridIndex(i,j,k)]+=wgt;//1.0;
+      //	P.CollectableResultBuffer[getGridIndexPotential(i,j,k)]-=1.0;
+      //HACK!	P.CollectableResultBuffer[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
     }
   }
   else
@@ -79,9 +79,9 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
         int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
         int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
         int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-        P.Collectables[getGridIndex(i,j,k)]+=wgt;//1.0;
-        //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-        //HACK!	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
+        P.CollectableResultBuffer[getGridIndex(i,j,k)]+=wgt;//1.0;
+        //	  P.CollectableResultBuffer[getGridIndexPotential(i,j,k)]-=1.0;
+        //HACK!	  P.CollectableResultBuffer[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
       }
     }
   }
@@ -111,7 +111,7 @@ DensityEstimator::addEnergy(MCWalkerConfiguration &W,
         int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
         int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
         int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-        W.Collectables[getGridIndex(i,j,k)]+=weight;
+        W.CollectableResultBuffer[getGridIndex(i,j,k)]+=weight;
       }
     }
   }
