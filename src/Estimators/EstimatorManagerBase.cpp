@@ -482,7 +482,7 @@ bool EstimatorManagerBase::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlN
     add(new LocalEnergyEstimator(H,true),MainEstimatorName);
   }
   //Collectables is special and should not be added to Estimators
-  if(Collectables == 0 && H.sizeOfCollectables())
+  if(Collectables == 0 && H.sizeOfCollectableResultBuffer())
   {
     app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
     Collectables=new CollectablesEstimator(H);

@@ -24,8 +24,8 @@ namespace qmcplusplus
 CollectablesEstimator::CollectablesEstimator(QMCHamiltonian& h)
   : refH(h)
 {
-  scalars.resize(h.sizeOfCollectables());
-  scalars_saved.resize(h.sizeOfCollectables());
+  scalars.resize(h.sizeOfCollectableResultBuffer());
+  scalars_saved.resize(h.sizeOfCollectableResultBuffer());
 }
 
 void CollectablesEstimator::registerObservables(std::vector<observable_helper*>& h5desc
@@ -52,7 +52,7 @@ void CollectablesEstimator::add2Record(RecordListType& record)
   FirstIndex=record.size();
   LastIndex=FirstIndex+scalars.size();
   //FirstIndex = record.size();
-  //for(int i=0; i<refH.sizeOfCollectables(); ++i)
+  //for(int i=0; i<refH.sizeOfCollectableResultBuffer(); ++i)
   //{
   //  std::ostringstream o;
   //  o<<"a"<<i;
@@ -65,7 +65,7 @@ void CollectablesEstimator::add2Record(RecordListType& record)
 //void CollectablesEstimator::accumulate(const MCWalkerConfiguration& W
 //    , WalkerIterator first, WalkerIterator last , RealType wgt)
 //{
-//  for(int i=0; i<refH.sizeOfCollectables(); ++i)
+//  for(int i=0; i<refH.sizeOfCollectableResultBuffer(); ++i)
 //    scalars[i](W.Collectables[i],wgt);
 //}
 }
