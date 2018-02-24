@@ -27,7 +27,7 @@ RMCLocalEnergyEstimator::RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs)
   FirstHamiltonian = h.startIndex();
   RMCSpecificTerms=8;
   scalars.resize(2*SizeOfHamiltonians+RMCSpecificTerms);
-  scalars_saved.resize(2*SizeOfHamiltonians+RMCSpecificTerms);
+  //scalars_saved.resize(2*SizeOfHamiltonians+RMCSpecificTerms);
 }
 
 ScalarEstimatorBase* RMCLocalEnergyEstimator::clone()

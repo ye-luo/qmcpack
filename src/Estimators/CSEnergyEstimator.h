@@ -52,11 +52,13 @@ struct CSEnergyEstimator: public ScalarEstimatorBase
    */
   CSEnergyEstimator(QMCHamiltonian& h, int hcopy=1);
 
+#if 0
   inline RealType getUmbrellaWeight(int ipsi)
   {
     return scalars_saved[ipsi*LE_INDEX+WEIGHT_INDEX].result();
     //return d_data[ipsi*LE_INDEX+WEIGHT_INDEX];
   }
+#endif
 
 
   void accumulate(const Walker_t& awalker, RealType wgt);

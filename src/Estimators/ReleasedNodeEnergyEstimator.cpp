@@ -26,7 +26,7 @@ ReleasedNodeEnergyEstimator::ReleasedNodeEnergyEstimator(QMCHamiltonian& h, int 
   SizeOfHamiltonians = h.sizeOfObservables();
   FirstHamiltonian = h.startIndex();
   scalars.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
-  scalars_saved.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
+//  scalars_saved.resize(SizeOfHamiltonians+LE_MAX+3.0*N_rn);
 }
 
 ScalarEstimatorBase* ReleasedNodeEnergyEstimator::clone()

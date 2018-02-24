@@ -58,11 +58,13 @@ struct PolymerEstimator: public ScalarEstimatorBase
 
 //     ScalarEstimatorBase* clone();
 
+#if 0
   inline RealType getUmbrellaWeight(int ipsi)
   {
     return scalars_saved[ipsi*LE_INDEX+WEIGHT_INDEX].result();
     //return d_data[ipsi*LE_INDEX+WEIGHT_INDEX];
   }
+#endif
 
   inline void setTau(RealType dt)
   {

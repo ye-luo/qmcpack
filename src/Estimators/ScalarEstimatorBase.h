@@ -54,13 +54,14 @@ struct ScalarEstimatorBase
   ///scalars to be measured
   std::vector<accumulator_type> scalars;
   ///scalars saved
-  std::vector<accumulator_type> scalars_saved;
+//  std::vector<accumulator_type> scalars_saved;
 //     RealType NSTEPS;
 
   inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
 
   virtual ~ScalarEstimatorBase() {}
 
+#if 0
   ///return average of the
   inline RealType average(int i=0) const
   {
@@ -76,6 +77,7 @@ struct ScalarEstimatorBase
   {
     return scalars[i].mean_and_variance();
   }
+#endif
 
   ///return the size of scalars it manages
   inline int size() const
@@ -98,7 +100,7 @@ struct ScalarEstimatorBase
     for(int i=0; i<scalars.size(); i++)
     {
       *first++ = scalars[i].mean();
-      scalars_saved[i]=scalars[i]; //save current block
+//      scalars_saved[i]=scalars[i]; //save current block
       scalars[i].clear();
     }
   }
@@ -116,7 +118,7 @@ struct ScalarEstimatorBase
     {
       *first++ = scalars[i].mean();
       *first_sq++ = scalars[i].mean2();
-      scalars_saved[i]=scalars[i]; //save current block
+//      scalars_saved[i]=scalars[i]; //save current block
       scalars[i].clear();
     }
   }

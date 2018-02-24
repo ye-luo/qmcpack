@@ -27,7 +27,7 @@ LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h, bool use_hdf5)
   SizeOfHamiltonians = h.sizeOfObservables();
   FirstHamiltonian = h.startIndex();
   scalars.resize(SizeOfHamiltonians+LE_MAX);
-  scalars_saved.resize(SizeOfHamiltonians+LE_MAX);
+  //scalars_saved.resize(SizeOfHamiltonians+LE_MAX);
 }
 
 ScalarEstimatorBase* LocalEnergyEstimator::clone()

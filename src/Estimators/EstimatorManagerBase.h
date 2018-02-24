@@ -146,6 +146,7 @@ public:
   ///return a pointer to the estimator
   EstimatorType* getMainEstimator();
 
+#if 0
   ///return the average for estimator i
   inline RealType average(int i) const
   {
@@ -157,6 +158,7 @@ public:
   {
     return Estimators[i]->variance();
   }
+#endif
 
   void setCollectionMode(bool collect);
   //void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
