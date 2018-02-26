@@ -53,10 +53,7 @@ public:
 
   void write_EDValues(void);
   void write_nonzero_domains(const ParticleSet& P);
-  
-/* Not be used
-  void write_CollectableResultBuffer( std::string& label,int& cnt,ParticleSet& P);
-*/
+  void write_Collectables( std::string& label,int& cnt,ParticleSet& P);
 
 private:
 
