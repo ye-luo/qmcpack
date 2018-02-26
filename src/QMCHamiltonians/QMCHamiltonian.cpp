@@ -193,13 +193,13 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
 void QMCHamiltonian::resetObservables(int start, int ncollects)
 {
   Observables.clear();
-  BufferType collectables;
-  collectables.rewind();
+  BufferType collectableBuffer;
+  collectableBuffer.rewind();
   for(int i=0; i<H.size(); ++i)
-    H[i]->addObservables(Observables,collectables);
+    H[i]->addObservables(Observables,collectableBuffer);
   for(int i=0; i<auxH.size(); ++i)
-    auxH[i]->addObservables(Observables,collectables);
-  if(collectables.size() != ncollects)
+    auxH[i]->addObservables(Observables,collectableBuffer);
+  if(collectableBuffer.size() != ncollects)
   {
     APP_ABORT("  QMCHamiltonian::resetObservables CollectableResultBufferSize != ncollects");
   }
