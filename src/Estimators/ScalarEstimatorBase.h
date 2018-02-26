@@ -21,7 +21,8 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
-#include <Estimators/accumulators.h>
+//#include <Estimators/accumulators.h>
+#include <Estimators/accumulators_with2prop.h>
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif

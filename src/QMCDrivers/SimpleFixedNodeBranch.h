@@ -27,7 +27,8 @@
 #include <OhmmsData/ParameterSet.h>
 #include <Particle/MCWalkerConfiguration.h>
 #include <Estimators/BlockHistogram.h>
-#include <Estimators/accumulators.h>
+//#include <Estimators/accumulators.h>
+#include <Estimators/accumulators_with2prop.h>
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
