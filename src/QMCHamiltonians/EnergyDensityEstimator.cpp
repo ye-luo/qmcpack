@@ -374,8 +374,8 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
   return 0.0;
 }
 
-
-void EnergyDensityEstimator::write_Collectables( std::string& label,int& cnt,ParticleSet& P)
+/* Not be used
+void EnergyDensityEstimator::write_CollectableResultBuffer( std::string& label,int& cnt,ParticleSet& P)
 {
   int v=1;
   //for(int v=0;v<nEDValues;v++){
@@ -386,7 +386,7 @@ void EnergyDensityEstimator::write_Collectables( std::string& label,int& cnt,Par
   app_log()<<"EDcoll "<<label<<cnt<<" "<<Ti<<" "<<To<< std::endl;
   //}
 }
-
+*/
 
 void EnergyDensityEstimator::write_EDValues(void)
 {
