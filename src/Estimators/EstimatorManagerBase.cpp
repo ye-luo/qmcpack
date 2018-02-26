@@ -273,11 +273,11 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
   PropertyCache[cpuInd] = MyTimer.elapsed();
   PropertyCache[acceptInd] = accept;
   for(int i=0; i<Estimators.size(); i++)
-    Estimators[i]->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
+    Estimators[i]->takeBlockAverage(AverageCache.begin());
+    //Estimators[i]->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
   if(Collectables)
-  {
-    Collectables->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
-  }
+    Collectables->takeBlockAverage(AverageCache.begin());
+    //Collectables->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
   if(collectall)
     collectBlockAverages(1);
 }
