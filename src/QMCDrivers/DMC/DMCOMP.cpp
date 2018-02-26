@@ -289,7 +289,7 @@ bool DMCOMP::run()
         if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
           Movers[ip]->updateWalkers(wit, wit_end);
 #endif
-        wClones[ip]->resetCollectables();
+        wClones[ip]->resetCollectableResultBuffer();
         const size_t nw=W.getActiveWalkers();
 #pragma omp for nowait
         for(size_t iw=0;iw<nw; ++iw)

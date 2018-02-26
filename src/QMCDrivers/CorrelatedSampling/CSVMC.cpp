@@ -169,7 +169,7 @@ bool CSVMC::run()
       {
         CSMovers[ip]->set_step(now_loc);
         //collectables are reset, it is accumulated while advancing walkers
-        wClones[ip]->resetCollectables();
+        wClones[ip]->resetCollectableResultBuffer();
         CSMovers[ip]->advanceWalkers(wit,wit_end,false);
         if(has_collectables)
           wClones[ip]->CollectableResultBuffer *= cnorm;

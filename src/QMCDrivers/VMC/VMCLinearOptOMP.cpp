@@ -99,7 +99,7 @@ bool VMCLinearOptOMP::run()
       Movers[ip]->startBlock(nSteps);
       int now_loc=CurrentStep;
       //rest the collectables and keep adding
-      wClones[ip]->resetCollectables();
+      wClones[ip]->resetCollectableResultBuffer();
       //rest the collectables and keep adding
       MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
       for (int step=0; step<nSteps; ++step)

@@ -1,4 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -294,7 +293,7 @@ public:
 
   /** reset all the collectable quantities during a MC iteration
    */
-  inline void resetCollectables()
+  inline void resetCollectableResultBuffer()
   {
     std::fill(CollectableResultBuffer.begin(),CollectableResultBuffer.end(),0.0);
   }

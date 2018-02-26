@@ -98,7 +98,7 @@ namespace qmcplusplus
 	  for (int step = 0; step < nSteps; ++step)
 	    {
 	      //collectables are reset, it is accumulated while advancing walkers
-	      wClones[ip]->resetCollectables ();
+	      wClones[ip]->resetCollectableResultBuffer();
 	      Movers[ip]->advanceWalkers (wit, wit_end, false);
 	      if (has_collectables)
 		wClones[ip]->CollectableResultBuffer *= cnorm;
