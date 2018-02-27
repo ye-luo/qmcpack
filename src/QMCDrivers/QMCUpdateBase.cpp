@@ -187,6 +187,12 @@ void QMCUpdateBase::stopBlock(bool collectall)
 #endif
 }
 
+//test for vmc
+void QMCUpdateBase::stopBlock_4vmc(bool collectall,int omp_num)
+{
+  EstimatorAgent->stopBlock_4vmc(acceptRatio(),collectall,omp_num);
+}
+
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 {
   UpdatePbyP=false;

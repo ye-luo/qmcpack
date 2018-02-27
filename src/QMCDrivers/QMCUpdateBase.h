@@ -150,6 +150,10 @@ public:
   /** stop a block
    */
   void stopBlock(bool collectall=true);
+  
+  /** for test vmcstop a block
+   */
+  void stopBlock_4vmc(bool collectall=true,int omp_num=0);
 
   /** set the multiplicity of the walkers to branch */
   void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);

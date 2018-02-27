@@ -282,19 +282,51 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages(1);
 }
 
+/** test for vmc take statistics of a block
+ *  * @param accept acceptance rate of this block
+ *   * @param collectall if true, need to gather data over MPI tasks
+ *    */
+void EstimatorManagerBase::stopBlock_4vmc(RealType accept, bool collectall, int omp_num)
+{
+  //take block averages and update properties per block
+  PropertyCache[weightInd]=BlockWeight;
+  PropertyCache[cpuInd] = MyTimer.elapsed();
+  PropertyCache[acceptInd] = accept;
+
+  for(int i=0; i<Estimators.size(); i++)
+  {
+    Estimators[i]->takeBlockAverage(AverageCache.begin());
+    //app_log() << "! test Estimators after:"<< omp_num<<AverageCache[0]<<" "<<AverageCache[1]<<" "<<AverageCache[2]<<" "<<AverageCache.size() << std::endl;
+  }
+  if(Collectables)
+  {
+    Collectables->takeBlockAverage(AverageCache.begin());
+    //app_log() <<"! test Collectables after "<< omp_num <<Collectables->FirstIndex<<" "<<AverageCache[0]<<" "<<AverageCache[1]<<" "<<AverageCache.size() << std::endl;
+  }
+
+}
+
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
 {
   //normalized it by the thread
   int num_threads=est.size();
   RealType tnorm=1.0/num_threads;
   AverageCache=est[0]->AverageCache;
-  for(int i=1; i<num_threads; i++)
-    AverageCache +=est[i]->AverageCache;
+  app_log() << "! test AverageCache in stopBlock(a) "<< ":"<<AverageCache[0]<<AverageCache[1]<<AverageCache[2]<<AverageCache.size() << std::endl;
+  //for(int tid=0; tid<num_threads; tid++)
+  //{
+  //  for(int i=0; i<Estimators.size(); i++)
+  //    est[tid]->Estimators[i]->takeBlockAverage(AverageCache.begin());
+  //  app_log() << " ! this is for test Ests in stopBlock "<<AverageCache[0] << std::endl;
+    //if(Collectables)
+     // est[tid]->Collectables->takeBlockAverage(AverageCache.begin());
+  //}
   AverageCache *= tnorm;
-  SquaredAverageCache=est[0]->SquaredAverageCache;
+ /* SquaredAverageCache=est[0]->SquaredAverageCache;
   for(int i=1; i<num_threads; i++)
     SquaredAverageCache +=est[i]->SquaredAverageCache;
   SquaredAverageCache *= tnorm;
+  */
   PropertyCache=est[0]->PropertyCache;
   for(int i=1; i<num_threads; i++)
     PropertyCache+=est[i]->PropertyCache;
