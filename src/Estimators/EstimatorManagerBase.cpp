@@ -288,22 +288,10 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
  *    */
 void EstimatorManagerBase::stopBlock_4vmc(RealType accept, bool collectall, int omp_num)
 {
-  //take block averages and update properties per block
+  //update properties per block
   PropertyCache[weightInd]=BlockWeight;
   PropertyCache[cpuInd] = MyTimer.elapsed();
   PropertyCache[acceptInd] = accept;
-
-  for(int i=0; i<Estimators.size(); i++)
-  {
-    Estimators[i]->deliver_accumulate(AverageCache.begin());
-    //app_log() << "! test Estimators after:"<< omp_num<<AverageCache[0]<<" "<<AverageCache[1]<<" "<<AverageCache[2]<<" "<<AverageCache.size() << std::endl;
-  }
-  if(Collectables)
-  {
-    Collectables->deliver_accumulate(AverageCache.begin());
-    //app_log() <<"! test Collectables after "<< omp_num <<Collectables->FirstIndex<<" "<<AverageCache[0]<<" "<<AverageCache[1]<<" "<<AverageCache.size() << std::endl;
-  }
-
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
@@ -312,25 +300,24 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
   int num_threads=est.size();
   RealType tnorm=1.0/num_threads;
   AverageCache=est[0]->AverageCache;
-  app_log() << "! test AverageCache in stopBlock(a) "<< ":"<<AverageCache[0]<<AverageCache[1]<<AverageCache[2]<<AverageCache.size() << std::endl;
-//for(int i=0; i<Estimators.size(); i++)
-  //{
-    //Estimators[i]->deliver_accumulate(AverageCache.begin());
-    //app_log() << "! test Estimators after:"<< omp_num<<AverageCache[0]<<" "<<AverageCache[1]<<" "<<AverageCache[2]<<" "<<AverageCache.size() << std::endl;
-    //  }
-    //    if(Collectables)
-    //      {
-    //          Collectables->devliver_accumulat(AverageCache.begin());
-    //              //app_log() <<"! test Collectables after "<< omp_num <<Collectables->FirstIndex<<" "<<AverageCache[0]<<" "<<AverageCache[1]<<" "<<AverageCache.size() << std::endl;
-    //                }
-  //for(int tid=0; tid<num_threads; tid++)
-  //{
-  //  for(int i=0; i<Estimators.size(); i++)
-  //    est[tid]->Estimators[i]->takeBlockAverage(AverageCache.begin());
-  //  app_log() << " ! this is for test Ests in stopBlock "<<AverageCache[0] << std::endl;
-    //if(Collectables)
-     // est[tid]->Collectables->takeBlockAverage(AverageCache.begin());
-  //}
+  //for(int i=1; i<num_threads; i++)
+   // AverageCache +=est[i]->AverageCache;
+  for(int tid=0; tid<num_threads; tid++)
+  {
+    for(int eid=0; eid<Estimators.size(); eid++)
+    {
+      est[tid]->Estimators[eid]->deliver_accumulate(AverageCache.begin());
+      /*app_log() << "! test Estimators after:"<<AverageCache[0]<<" "<<AverageCache[7]<<" "
+                  <<AverageCache[8]<<" "<<AverageCache[9]<<" " << std::endl;*/
+    }
+    if(Collectables)
+    {
+      est[tid]->Collectables->deliver_accumulate(AverageCache.begin());
+      /*app_log() <<"! test Collectables after: "<<AverageCache[0]<<" "<<AverageCache[7]<<" "
+                  <<AverageCache[8]<<" "<<AverageCache[9]<<" " << std::endl;*/
+    }
+  }
+
   AverageCache *= tnorm;
  /* SquaredAverageCache=est[0]->SquaredAverageCache;
   for(int i=1; i<num_threads; i++)

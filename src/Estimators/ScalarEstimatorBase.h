@@ -114,7 +114,6 @@ struct ScalarEstimatorBase
     for(int i=0; i<scalars.size(); i++)
     {
       *first++ += scalars[i].mean();
-      //app_log() << "!test takeBlockAverage First"<< *first<<" i "<< i<< std::endl;
       scalars[i].clear();
      }
    }
