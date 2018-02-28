@@ -122,21 +122,12 @@ struct accumulator_set
   }
 };
 
-#if 0
-template<typename ACC>
-inline typename ACC::value_type mean(const ACC& ac)
-{
-  return ac.mean();
-}
-#endif
-
 template<typename T>
 std::ostream& operator<<(std::ostream& os, accumulator_set<T>& rhs)
 {
   os << "accumulator_set: "
      << " value = " << rhs.properties[0]
-     << " value_sq = " << rhs.properties[1]
-     << " weight = " << rhs.properties[2];
+     << " weight = " << rhs.properties[1];
   return os;
 }
 

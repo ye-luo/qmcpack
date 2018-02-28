@@ -52,24 +52,6 @@ struct ScalarEstimatorBase
 
   virtual ~ScalarEstimatorBase() {}
 
-#if 0
-  ///return average of the
-  inline RealType average(int i=0) const
-  {
-    return scalars_saved[i].mean();
-  }
-  ///return a variance
-  inline RealType variance(int i=0) const
-  {
-    return scalars_saved[i].variance();
-  }
-  ///retrun mean and variance
-  inline std::pair<RealType,RealType> operator[](int i) const
-  {
-    return scalars[i].mean_and_variance();
-  }
-#endif
-
   ///return the size of scalars it manages
   inline int size() const
   {
@@ -108,24 +90,6 @@ struct ScalarEstimatorBase
      }
    }
 
-  /** take block average and write to common containers for values and squared values
-   * @param first starting iterator of values
-   * @param first_sq starting iterator of squared values
-   */
-  template<typename IT>
-  inline void takeBlockAverage(IT first, IT first_sq)
-  {
-    first += FirstIndex;
-    first_sq += FirstIndex;
-    for(int i=0; i<scalars.size(); i++)
-    {
-      *first++ = scalars[i].mean();
-      *first_sq++ = scalars[i].mean2();
-//      scalars_saved[i]=scalars[i]; //save current block
-      scalars[i].clear();
-    }
-  }
-
   /** a virtual function to accumulate observables or collectables
    * @param W const MCWalkerConfiguration
    * @param first const_iterator for the first walker
@@ -153,11 +117,6 @@ struct ScalarEstimatorBase
   ///clone the object
   virtual ScalarEstimatorBase* clone()=0;
 
-  inline void setNumberOfBlocks(int nsamples)
-  {
-//       NSTEPS=1.0/ static_cast<RealType>(nsamples);
-  }
-
   protected:
   ///first index within an record of the first element handled by an object
   int FirstIndex;
@@ -167,7 +126,6 @@ struct ScalarEstimatorBase
   std::vector<accumulator_type> scalars;
   ///scalars saved
 //  std::vector<accumulator_type> scalars_saved;
-//     RealType NSTEPS;
 
 };
 }
