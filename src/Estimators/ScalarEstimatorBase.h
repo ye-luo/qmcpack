@@ -48,16 +48,6 @@ struct ScalarEstimatorBase
   typedef MCWalkerConfiguration::const_iterator WalkerIterator;
   typedef RecordNamedProperty<RealType>         RecordListType;
 
-  ///first index within an record of the first element handled by an object
-  int FirstIndex;
-  ///last index within an record of the first element handled by an object
-  int LastIndex;
-  ///scalars to be measured
-  std::vector<accumulator_type> scalars;
-  ///scalars saved
-//  std::vector<accumulator_type> scalars_saved;
-//     RealType NSTEPS;
-
   inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
 
   virtual ~ScalarEstimatorBase() {}
@@ -167,6 +157,18 @@ struct ScalarEstimatorBase
   {
 //       NSTEPS=1.0/ static_cast<RealType>(nsamples);
   }
+
+  protected:
+  ///first index within an record of the first element handled by an object
+  int FirstIndex;
+  ///last index within an record of the first element handled by an object
+  int LastIndex;
+  ///scalars to be measured
+  std::vector<accumulator_type> scalars;
+  ///scalars saved
+//  std::vector<accumulator_type> scalars_saved;
+//     RealType NSTEPS;
+
 };
 }
 

@@ -37,8 +37,9 @@ struct LocalEnergyOnlyEstimator: public ScalarEstimatorBase
   {
     for(; first != last; ++first)
     {
-      scalars[0]((*first)->Properties(LOCALENERGY),wgt);
-      scalars[1]((*first)->Properties(LOCALPOTENTIAL),wgt);
+      auto &elocal = (*first)->Properties(LOCALENERGY);
+      scalars[0](elocal,wgt);
+      scalars[1](elocal*elocal,wgt);
     }
   }
 
@@ -50,17 +51,21 @@ struct LocalEnergyOnlyEstimator: public ScalarEstimatorBase
   inline void add2Record(RecordListType& record)
   {
     FirstIndex = record.add("LocalEnergy");
-    int s1=record.add("LocalPotential");
+    record.add("LocalEnergy_sq");
     LastIndex = FirstIndex+2;
     // int s2=record.add("KineticEnergy");
     //LastIndex = FirstIndex+3;
     clear();
   }
+
   ScalarEstimatorBase* clone()
   {
     return new LocalEnergyOnlyEstimator();
   }
 
+  RealType getSumofWeightedEnergy() { return scalars[0].result(); }
+  RealType getSumofWeightedEnergySquare() { return scalars[1].result(); }
+  RealType getSumofWeight() { return scalars[0].count(); }
 };
 }
 #endif

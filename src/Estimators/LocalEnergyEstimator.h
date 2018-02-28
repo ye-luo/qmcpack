@@ -74,6 +74,12 @@ public:
   void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid);
   ScalarEstimatorBase* clone();
   /*@}*/
+
+  RealType getSumofWeightedEnergy() { return scalars[0].result(); }
+  RealType getSumofWeightedEnergySquare() { return scalars[1].result(); }
+  RealType getSumofWeight() { return scalars[0].count(); }
+  RealType getSumofWeightedLocalPotential() { return scalars[2].result(); }
+
 };
 }
 #endif

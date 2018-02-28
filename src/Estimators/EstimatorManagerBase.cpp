@@ -435,9 +435,9 @@ void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W
   energynow.clear();
   energynow.accumulate(W,W.begin(),W.end(),1.0);
   std::vector<RealType> tmp(3);
-  tmp[0]= energynow.scalars[0].result();
-  tmp[1]= energynow.scalars[0].result2();
-  tmp[2]= energynow.scalars[0].count();
+  tmp[0]= energynow.getSumofWeightedEnergy();
+  tmp[1]= energynow.getSumofWeightedEnergySquare();
+  tmp[2]= energynow.getSumofWeight();
   myComm->allreduce(tmp);
   eavg=tmp[0]/tmp[2];
   var=tmp[1]/tmp[2]-eavg*eavg;

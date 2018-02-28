@@ -88,26 +88,10 @@ struct accumulator_set
     properties[WEIGHT] =w;
   }
 
-  /** add a value but set the weight 1
-   *
-   * @todo Jeremy provides the reasonin of having this function. Suggest rename it to make the meaning clear.
-   */
-  inline void add(value_type x)
-  {
-    properties[VALUE]+=x;
-    //properties[VALUESQ] += x*x;
-    properties[WEIGHT]=1;
-  }
-
   /** return true if Weight!= 0 */
   inline bool good() const
   {
     return properties[WEIGHT]>0;
-  }
-  /** return true if Weight== 0 */
-  inline bool bad() const
-  {
-    return iszero(properties[WEIGHT]);
   }
 
   /** return the sum */
@@ -115,13 +99,6 @@ struct accumulator_set
   {
     return properties[VALUE];
   }
-
-  /** return the sum of value squared */
-  inline return_type result2() const
-  {
-    return properties[VALUE]*properties[VALUE];
-  }
-  
 
   /** return the count
    *
@@ -132,33 +109,10 @@ struct accumulator_set
     return properties[WEIGHT];
   }
 
-  inline std::pair<return_type,return_type> mean_and_variance() const
-  {
-    value_type norm=1.0/properties[WEIGHT];
-    value_type avg=properties[VALUE]*norm;
-    return std::pair<return_type,return_type>(avg,norm*properties[VALUE]*properties[VALUE]-avg*avg);
-  }
-
   ///return the mean
   inline return_type mean() const
   {
     return good()?properties[VALUE]/properties[WEIGHT]:0.0;
-  }
-
-  ///return the mean of squared values
-  inline return_type mean2() const
-  {
-    return good()?(properties[VALUE]*properties[VALUE])/properties[WEIGHT]:0.0;
-  }
-  
-
-  inline return_type variance() const
-  {
-    if(iszero(properties[WEIGHT]))
-      return std::numeric_limits<T>::max();
-    value_type norm=1.0/properties[WEIGHT];
-    //return norm*(properties[VALUESQ]-properties[VALUE]*properties[VALUE]*norm);
-    return norm*(1-norm)*(properties[VALUE]*properties[VALUE]);
   }
 
   inline void clear()
@@ -168,11 +122,13 @@ struct accumulator_set
   }
 };
 
+#if 0
 template<typename ACC>
 inline typename ACC::value_type mean(const ACC& ac)
 {
   return ac.mean();
 }
+#endif
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, accumulator_set<T>& rhs)
