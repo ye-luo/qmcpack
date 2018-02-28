@@ -21,8 +21,8 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
-#include <Estimators/accumulators.h>
-//#include <Estimators/accumulators_with2prop.h>
+//#include <Estimators/accumulators.h>
+#include <Estimators/accumulators_with2prop.h>
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
@@ -106,15 +106,15 @@ struct ScalarEstimatorBase
     }
   }
 
-/** take block average and write to a common container */
+/** take block average and accumulate to a common container */
   template<typename IT>
-  inline void takeBlockAverage_4vmc(IT first)
+  inline void deliver_accumulate(IT first)
   {
     first += FirstIndex;
     for(int i=0; i<scalars.size(); i++)
     {
-      *first++ = scalars[i].mean();
-      app_log() << "!test takeBlockAverage First"<< *first<<" i "<< i<< std::endl;
+      *first++ += scalars[i].mean();
+      //app_log() << "!test takeBlockAverage First"<< *first<<" i "<< i<< std::endl;
       scalars[i].clear();
      }
    }
