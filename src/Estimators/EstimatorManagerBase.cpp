@@ -287,9 +287,9 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
 void EstimatorManagerBase::stopBlock_4vmc(RealType accept, bool collectall, int omp_num)
 {
   //update properties per block
-  PropertyCache[weightInd]=BlockWeight;
-  PropertyCache[cpuInd] = MyTimer.elapsed();
-  PropertyCache[acceptInd] = accept;
+  //PropertyCache[weightInd]=BlockWeight;
+  //PropertyCache[cpuInd] = MyTimer.elapsed();
+  //PropertyCache[acceptInd] = accept;
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
