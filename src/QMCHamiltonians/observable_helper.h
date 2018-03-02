@@ -173,7 +173,8 @@ struct observable_helper
     a.write(data_id,pname.c_str());
   }
 
-  inline void write(const value_type* first_v, const value_type* first_vv)
+  //inline void write(const value_type* first_v, const value_type* first_vv)
+  inline void write(const value_type* first_v)
   {
     hsize_t rank=mydims.size();
     if(rank)
