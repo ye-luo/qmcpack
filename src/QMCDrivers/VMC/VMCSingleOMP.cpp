@@ -105,7 +105,7 @@ bool VMCSingleOMP::run()
       //Movers[ip]->stopBlock(false);
     }//end-of-parallel for
     CurrentStep+=nSteps;
-    EstimatorAgent->stopBlock(EstimatorAgentClones, acceptRatio());
+    EstimatorAgent->aggregateThreadsAndRanks(EstimatorAgentClones, acceptRatio());
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif

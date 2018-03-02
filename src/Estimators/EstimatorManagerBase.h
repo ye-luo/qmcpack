@@ -200,10 +200,18 @@ public:
    */
   void stopBlock(RealType accept, bool collectall=true);
 
-  /** stop a block
+  /** aggregate data and communicate when stop a block
+   *  used to name stopBlock(const std::vector<EstimatorManagerBase*>& m, RealType accept)
    * @param m list of estimator which has been collecting data independently
+   * @param accept to get acceptance rate of this block
    */
-  void stopBlock(const std::vector<EstimatorManagerBase*>& m, RealType accept);
+  void aggregateThreadsAndRanks(const std::vector<EstimatorManagerBase*>& m, RealType accept);
+
+  /** collect Data from SampleStacks before aggregateThreadsAndRanks
+   * @param h hamitonian clone
+   * @param w MCwalkerConfiguration clone
+   */
+  void collectDatafromSampleStacks(QMCHamiltonian& H, MCWalkerConfiguration& W);
 
   /** accumulate the measurements
    * @param W walkers

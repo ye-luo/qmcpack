@@ -110,10 +110,10 @@ namespace qmcplusplus
 
 	      branchEngine->collect (CurrentStep, W, branchClones);	//Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
 	    }
-	  Movers[ip]->stopBlock (false);
+	  Movers[ip]->stopBlock (false);//could be removed
 	}			//end-of-parallel for
 	CurrentStep += nSteps;
-	EstimatorAgent->stopBlock(EstimatorAgentClones, acceptRatio());
+	EstimatorAgent->aggregateThreadsAndRanks(EstimatorAgentClones, acceptRatio());
 	//why was this commented out? Are checkpoints stored some other way?
 	if (storeConfigs)
 	  recordBlock (block);

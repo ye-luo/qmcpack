@@ -280,7 +280,7 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages(1);
 }
 
-void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est, RealType accept)
+void EstimatorManagerBase::aggregateThreadsAndRanks(const std::vector<EstimatorManagerBase*>& est, RealType accept)
 {
   //normalized it by the thread
   int num_threads=est.size();

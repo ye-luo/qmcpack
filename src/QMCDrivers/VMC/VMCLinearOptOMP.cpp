@@ -110,10 +110,10 @@ bool VMCLinearOptOMP::run()
         if (Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0)
           wClones[ip]->saveEnsemble(wit,wit_end);
       }
-      Movers[ip]->stopBlock(false);
+      Movers[ip]->stopBlock(false);//could be removed
     }//end-of-parallel for
     CurrentStep+=nSteps;
-    EstimatorAgent->stopBlock(EstimatorAgentClones, acceptRatio());
+    EstimatorAgent->aggregateThreadsAndRanks(EstimatorAgentClones, acceptRatio());
     #pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {

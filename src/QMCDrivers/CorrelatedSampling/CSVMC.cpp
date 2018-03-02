@@ -178,11 +178,11 @@ bool CSVMC::run()
         if (Period4WalkerDump&& now_loc%Period4WalkerDump==0)
           wClones[ip]->saveEnsemble(wit,wit_end);
       }
-      CSMovers[ip]->stopBlock(false);
+      CSMovers[ip]->stopBlock(false);//could be removed
       
     }//end-of-parallel for
     CurrentStep+=nSteps;
-    EstimatorAgent->stopBlock(EstimatorAgentClones, acceptRatio());
+    EstimatorAgent->aggregateThreadsAndRanks(EstimatorAgentClones, acceptRatio());
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
 #if !defined(REMOVE_TRACEMANAGER)
