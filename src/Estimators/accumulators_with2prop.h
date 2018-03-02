@@ -108,6 +108,12 @@ struct accumulator_set
   {
     return properties[WEIGHT];
   }
+  
+  /** return the capacity */
+  inline int capacity() const
+  {
+    return CAPACITY;
+  } 
 
   ///return the mean
   inline return_type mean() const
