@@ -45,17 +45,16 @@ namespace qmcplusplus
 template<typename T>
 inline void put_histogram( std::string name, accumulator_set<T> a,  boost::property_tree::ptree &pt)
 {
-  pt.put(name+".value",a.properties[0]);
-  pt.put(name+".value_squared",a.properties[1]);
-  pt.put(name+".weight",a.properties[2]);
+  pt.put(name+".value",a.result());
+  //pt.put(name+".value_squared",a.properties[1]);
+  pt.put(name+".weight",a.count());
 }
 
 template<typename T>
 inline void get_histogram( std::string name, accumulator_set<T>& a, boost::property_tree::ptree &pt)
 {
-  a.properties[0]=pt.get<T>(name+".value");
-  a.properties[1]=pt.get<T>(name+".value_squared");
-  a.properties[2]=pt.get<T>(name+".weight");
+  //a.properties[1]=pt.get<T>(name+".value_squared");
+  a.reset(pt.get<T>(name+".value"),pt.get<T>(name+".weight"));
 }
 #endif
 
@@ -287,7 +286,8 @@ bool BranchIO::read_adios(const std::string& fname)
 void BranchIO::bcast_state()
 {
   int n=ref.vParam.size()+ref.iParam.size();
-  std::vector<RealType> pdata(n+1+16,-1);
+  int capacity=ref.EnergyHist.capacity(); 
+  std::vector<RealType> pdata(n+1+4*capacity,-1);
 
   if(myComm->rank()==0)
   {
@@ -295,13 +295,14 @@ void BranchIO::bcast_state()
     copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
     int offset=n;
     pdata[offset++]=ref.BranchMode.to_ulong();
-    copy(ref.EnergyHist.properties,ref.EnergyHist.properties+4,pdata.begin()+offset);
-    offset+=4;
-    copy(ref.VarianceHist.properties,ref.VarianceHist.properties+4,pdata.begin()+offset);
-    offset+=4;
-    copy(ref.R2Accepted.properties,ref.R2Accepted.properties+4,pdata.begin()+offset);
-    offset+=4;
-    copy(ref.R2Proposed.properties,ref.R2Proposed.properties+4,pdata.begin()+offset);
+    copy(ref.EnergyHist.properties,ref.EnergyHist.properties+capacity,pdata.begin()+offset);
+    offset+=capacity;
+    copy(ref.VarianceHist.properties,ref.VarianceHist.properties+capacity,pdata.begin()+offset);
+    offset+=capacity;
+    copy(ref.R2Accepted.properties,ref.R2Accepted.properties+capacity,pdata.begin()+offset);
+    offset+=capacity;
+    copy(ref.R2Proposed.properties,ref.R2Proposed.properties+capacity,pdata.begin()+offset);
+
   }
 
   //broadcast to the nodes : need to add a namespace mpi::
@@ -319,13 +320,13 @@ void BranchIO::bcast_state()
   {
     //update historgram
     int ii=n+1;
-    ref.EnergyHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    ii+=4;
-    ref.VarianceHist.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    ii+=4;
-    ref.R2Accepted.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
-    ii+=4;
-    ref.R2Proposed.reset(pdata[ii],pdata[ii+1],pdata[ii+2]);
+    ref.EnergyHist.reset(pdata[ii],pdata[ii+1]);
+    ii+=capacity;
+    ref.VarianceHist.reset(pdata[ii],pdata[ii+1]);
+    ii+=capacity;
+    ref.R2Accepted.reset(pdata[ii],pdata[ii+1]);
+    ii+=capacity;
+    ref.R2Proposed.reset(pdata[ii],pdata[ii+1]);
   }
 }
 
@@ -338,7 +339,7 @@ int64_t BranchIO::get_Checkpoint_size()
                             + 8 * (4)                     \
                             + 8 * (4)                     \
                             + 4 * (8)                     \
-                            + 8 * (16);
+                            + 8 * (16);//accumulator_set change, so here maybe wrong.
   return adios_groupsize;
 }
 
