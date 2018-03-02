@@ -280,19 +280,7 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages(1);
 }
 
-/** test for vmc take statistics of a block
- *  * @param accept acceptance rate of this block
- *   * @param collectall if true, need to gather data over MPI tasks
- *    */
-void EstimatorManagerBase::stopBlock_4vmc(RealType accept, bool collectall, int omp_num)
-{
-  //update properties per block
-  //PropertyCache[weightInd]=BlockWeight;
-  //PropertyCache[cpuInd] = MyTimer.elapsed();
-  //PropertyCache[acceptInd] = accept;
-}
-
-void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
+void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est, RealType accept)
 {
   //normalized it by the thread
   int num_threads=est.size();
@@ -322,11 +310,21 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
     SquaredAverageCache +=est[i]->SquaredAverageCache;
   SquaredAverageCache *= tnorm;
   */
+  // aggregate PropertyCache from all the threads
   PropertyCache=est[0]->PropertyCache;
   for(int i=1; i<num_threads; i++)
     PropertyCache+=est[i]->PropertyCache;
+  // special treatment for quantities collected by EstimatorManagerBase
+  for(int i=0; i<num_threads; i++)
+  {
+    PropertyCache[weightInd] += est[i]->BlockWeight;
+    PropertyCache[acceptInd] += accept;
+  }
+  // skip blockWeight
   for(int i=1; i<PropertyCache.size(); i++)
     PropertyCache[i] *= tnorm;
+  // only the master thread BlockCPU matters
+  PropertyCache[cpuInd] = MyTimer.elapsed();
   //for(int i=0; i<num_threads; ++i)
   //varAccumulator(est[i]->varAccumulator.mean());
   collectBlockAverages(num_threads);

@@ -182,7 +182,7 @@ bool CSVMC::run()
       
     }//end-of-parallel for
     CurrentStep+=nSteps;
-    EstimatorAgent->stopBlock(EstimatorAgentClones);
+    EstimatorAgent->stopBlock(EstimatorAgentClones, acceptRatio());
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
 #if !defined(REMOVE_TRACEMANAGER)

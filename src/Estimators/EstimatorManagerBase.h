@@ -199,14 +199,11 @@ public:
    * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall=true);
-  /** test for vmc stop a block
- * * @param accept acceptance rate of this block
- * */
-  void stopBlock_4vmc(RealType accept, bool collectall=true, int omp_num=0);
+
   /** stop a block
    * @param m list of estimator which has been collecting data independently
    */
-  void stopBlock(const std::vector<EstimatorManagerBase*>& m);
+  void stopBlock(const std::vector<EstimatorManagerBase*>& m, RealType accept);
 
   /** accumulate the measurements
    * @param W walkers

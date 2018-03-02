@@ -113,7 +113,7 @@ namespace qmcplusplus
 	  Movers[ip]->stopBlock (false);
 	}			//end-of-parallel for
 	CurrentStep += nSteps;
-	EstimatorAgent->stopBlock (EstimatorAgentClones);
+	EstimatorAgent->stopBlock(EstimatorAgentClones, acceptRatio());
 	//why was this commented out? Are checkpoints stored some other way?
 	if (storeConfigs)
 	  recordBlock (block);

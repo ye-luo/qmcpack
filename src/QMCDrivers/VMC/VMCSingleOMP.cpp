@@ -102,12 +102,10 @@ bool VMCSingleOMP::run()
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
-      //Movers[ip]->stopBlock_4vmc(false,ip);
-     //Movers[ip]->stopBlock(false);
+      //Movers[ip]->stopBlock(false);
     }//end-of-parallel for
-    //EstimatorAgent->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
-    EstimatorAgent->stopBlock(EstimatorAgentClones);
+    EstimatorAgent->stopBlock(EstimatorAgentClones, acceptRatio());
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
