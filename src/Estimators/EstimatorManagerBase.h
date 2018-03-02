@@ -274,7 +274,7 @@ protected:
   ///cached block averages of the values
   Vector<RealType> AverageCache;
   ///cached block averages of the squared values
-  Vector<RealType> SquaredAverageCache;
+  //Vector<RealType> SquaredAverageCache;//nolonger used
   ///cached block averages of properties, e.g. BlockCPU
   Vector<RealType> PropertyCache;
   ///manager of scalar data
