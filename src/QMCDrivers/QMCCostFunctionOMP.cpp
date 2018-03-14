@@ -282,7 +282,7 @@ void QMCCostFunctionOMP::checkConfigurations()
     Return_t e2=0.0;
     for (int iw=0, iwg=wPerNode[ip]; iw<wRef.numSamples(); ++iw,++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.R=wRef.getSample(iw);
       wRef.update(true);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
@@ -386,7 +386,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     Return_t e2=0.0;
     for (int iw=0, iwg=wPerNode[ip]; iw<wRef.numSamples(); ++iw,++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.R=wRef.getSample(iw);
       wRef.update(true);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
@@ -518,7 +518,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     Return_t wgt_node=0.0, wgt_node2=0.0;
     for (int iw=0, iwg=wPerNode[ip]; iw<wRef.numSamples(); ++iw,++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.R=wRef.getSample(iw);
       wRef.update(true);
       if(nlpp) wRef.donePbyP(true);
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
