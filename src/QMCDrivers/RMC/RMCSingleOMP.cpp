@@ -40,10 +40,8 @@ namespace qmcplusplus
 /// Constructor.
   RMCSingleOMP::RMCSingleOMP (MCWalkerConfiguration & w,
 			      TrialWaveFunction & psi, QMCHamiltonian & h,
-			      HamiltonianPool & hpool,
-			      WaveFunctionPool & ppool):QMCDriver (w, psi, h,
-								   ppool),
-    CloneManager (hpool), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
+			      WaveFunctionPool & ppool)
+  :QMCDriver (w, psi, h, ppool), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
     beads (-1), fromScratch (true)
   {
     RootName = "rmc";
@@ -320,9 +318,6 @@ namespace qmcplusplus
 					W.begin () + wPerNode[ip + 1], false);
 	    branchEngine->collect (CurrentStep, W, branchClones);
 	  }
-	Movers[ip]->updateWalkers (W.begin () + wPerNode[ip],
-				   W.begin () + wPerNode[ip + 1]);
-
       }
 
     fromScratch = false;

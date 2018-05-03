@@ -17,7 +17,6 @@
     
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#include "QMCWaveFunctions/FermionBase.h"
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #else
@@ -35,7 +34,7 @@ namespace qmcplusplus
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
 
-class SlaterDet: public OrbitalBase, public FermionBase
+class SlaterDet: public OrbitalBase
 {
 public:
   typedef DiracDeterminantBase Determinant_t;
@@ -86,11 +85,6 @@ public:
   virtual void resetTargetParticleSet(ParticleSet& P);
 
   virtual
-  ValueType evaluate(ParticleSet& P
-                     ,ParticleSet::ParticleGradient_t& G
-                     ,ParticleSet::ParticleLaplacian_t& L);
-
-  virtual
   RealType evaluateLog(ParticleSet& P
                        ,ParticleSet::ParticleGradient_t& G
                        ,ParticleSet::ParticleLaplacian_t& L);
@@ -127,7 +121,7 @@ public:
   virtual
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);
+    return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP,ratios);
   }
 
   virtual

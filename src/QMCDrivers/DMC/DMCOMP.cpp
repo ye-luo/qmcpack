@@ -43,8 +43,8 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
-  : QMCDriver(w,psi,h,ppool), CloneManager(hpool)
+DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
+  : QMCDriver(w,psi,h,ppool)
   , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no")
   , BranchInterval(-1),mover_MaxAge(-1)
 {
@@ -165,8 +165,12 @@ void DMCOMP::resetUpdateEngines()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
+#ifdef USE_FAKE_RNG
+      Rng[ip] = new FakeRandom();
+#else
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
+#endif
       branchClones[ip] = new BranchEngineType(*branchEngine);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
@@ -278,17 +282,6 @@ bool DMCOMP::run()
         int now=CurrentStep;
         Movers[ip]->set_step(sample);
         bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
-#if 0
-        MCWalkerConfiguration::iterator
-        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-        for(int interval = 0; interval<BranchInterval-1; ++interval,++now)
-          Movers[ip]->advanceWalkers(wit,wit_end,false);
-        wClones[ip]->resetCollectables();
-        Movers[ip]->advanceWalkers(wit,wit_end,false);
-        Movers[ip]->setMultiplicity(wit,wit_end);
-        if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
-          Movers[ip]->updateWalkers(wit, wit_end);
-#endif
         wClones[ip]->resetCollectableResultBuffer();
         const size_t nw=W.getActiveWalkers();
 #pragma omp for nowait
@@ -296,7 +289,6 @@ bool DMCOMP::run()
         {
           Walker_t& thisWalker(*W[iw]);
           Movers[ip]->advanceWalker(thisWalker,recompute);
-          //Movers[ip]->setMultiplicity(thisWalker);
         }
       }
 
@@ -328,8 +320,10 @@ bool DMCOMP::run()
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
     {
+#ifndef USE_FAKE_RNG
       for(int ip=0; ip<NumThreads; ip++)
         *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+#endif
     }
     recordBlock(block);
     dmc_loop.stop();
@@ -346,8 +340,10 @@ bool DMCOMP::run()
   prof.pop(); //close loop
 
   //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+#ifndef USE_FAKE_RNG
   for(int ip=0; ip<NumThreads; ip++)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+#endif
   EstimatorAgent->stop();
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
