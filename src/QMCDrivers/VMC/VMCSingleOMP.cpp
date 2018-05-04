@@ -156,7 +156,6 @@ void VMCSingleOMP::resetRun()
   {
     movers_created=true;
     Movers.resize(NumThreads,0);
-    branchClones.resize(NumThreads,0);
     EstimatorAgentClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
@@ -176,7 +175,6 @@ void VMCSingleOMP::resetRun()
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      branchClones[ip] = new BranchEngineType(*branchEngine);
       if (QMCDriverMode[QMC_UPDATE_MODE])
       {
         Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
@@ -234,7 +232,7 @@ void VMCSingleOMP::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip],traceClones[ip]);
+    Movers[ip]->resetRun(branchEngine,EstimatorAgentClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     else

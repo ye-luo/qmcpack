@@ -480,7 +480,6 @@ void VMCLinearOptOMP::resetRun()
   {
     Movers.resize(NumThreads,0);
 //       CSMovers.resize(NumThreads,0);
-    branchClones.resize(NumThreads,0);
     EstimatorAgentClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
@@ -501,7 +500,6 @@ void VMCLinearOptOMP::resetRun()
 #endif
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
-      branchClones[ip] = new BranchEngineType(*branchEngine);
       if (QMCDriverMode[QMC_UPDATE_MODE])
       {
 //           if (UseDrift == "rn")
@@ -525,7 +523,7 @@ void VMCLinearOptOMP::resetRun()
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
-        //Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip]);
+        //Movers[ip]->resetRun(branchEngine,EstimatorAgentClones[ip]);
       }
       else
       {
@@ -548,7 +546,7 @@ void VMCLinearOptOMP::resetRun()
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
-        //Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip]);
+        //Movers[ip]->resetRun(branchEngine,EstimatorAgentClones[ip]);
       }
       if (ip==0)
         app_log() << os.str() << std::endl;
@@ -569,8 +567,8 @@ void VMCLinearOptOMP::resetRun()
     int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
 //       CSMovers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip],traceClones[ip]);
-//       CSMovers[ip]->resetRun(branchClones[ip],EstimatorAgentClones[ip]);
+    Movers[ip]->resetRun(branchEngine,EstimatorAgentClones[ip],traceClones[ip]);
+//       CSMovers[ip]->resetRun(branchEngine,EstimatorAgentClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     else
