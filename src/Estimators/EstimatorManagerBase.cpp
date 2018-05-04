@@ -163,7 +163,6 @@ void EstimatorManagerBase::start(int blocks, bool record)
   int nc=(Collectables)?Collectables->size():0;
   BlockAverages.setValues(0.0);
   AverageCache.resize(BlockAverages.size()+nc);
-  //SquaredAverageCache.resize(BlockAverages.size()+nc);
   PropertyCache.resize(BlockProperties.size());
   //count the buffer size for message
   BufferSize=2*AverageCache.size()+PropertyCache.size();
@@ -218,10 +217,6 @@ void EstimatorManagerBase::stop(const std::vector<EstimatorManagerBase*> est)
   for(int i=1; i<num_threads; i++)
     AverageCache+=est[i]->AverageCache;
   AverageCache*=tnorm;
-  //SquaredAverageCache=est[0]->SquaredAverageCache;
-  //for(int i=1; i<num_threads; i++)
-  //  SquaredAverageCache+=est[i]->SquaredAverageCache;
-  //SquaredAverageCache*=tnorm;
   //add properties and divide them by the number of threads except for the weight
   PropertyCache=est[0]->PropertyCache;
   for(int i=1; i<num_threads; i++)
@@ -272,10 +267,8 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
   PropertyCache[acceptInd] = accept;
   for(int i=0; i<Estimators.size(); i++)
     Estimators[i]->takeBlockAverage(AverageCache.begin());
-    //Estimators[i]->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
   if(Collectables)
     Collectables->takeBlockAverage(AverageCache.begin());
-    //Collectables->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
   if(collectall)
     collectBlockAverages(1);
 }
@@ -301,11 +294,6 @@ void EstimatorManagerBase::aggregateThreadsAndRanks(const std::vector<EstimatorM
   }
 
   AverageCache *= tnorm;
- /* SquaredAverageCache=est[0]->SquaredAverageCache;
-  for(int i=1; i<num_threads; i++)
-    SquaredAverageCache +=est[i]->SquaredAverageCache;
-  SquaredAverageCache *= tnorm;
-  */
   // aggregate PropertyCache from all the threads
   PropertyCache=est[0]->PropertyCache;
   for(int i=1; i<num_threads; i++)
@@ -338,7 +326,6 @@ void EstimatorManagerBase::collectBlockAverages(int num_threads)
     {
       BufferType::iterator cur(RemoteData[0]->begin());
       copy(AverageCache.begin(),AverageCache.end(),cur);
-      //copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur+n1);
       copy(PropertyCache.begin(),PropertyCache.end(),cur+n1);
     }
     myComm->reduce(*RemoteData[0]);
@@ -346,11 +333,9 @@ void EstimatorManagerBase::collectBlockAverages(int num_threads)
     {
       BufferType::iterator cur(RemoteData[0]->begin());
       copy(cur,cur+n1, AverageCache.begin());
-      //copy(cur+n1,cur+n2, SquaredAverageCache.begin());
       copy(cur+n1,cur+n2, PropertyCache.begin());
       RealType nth=1.0/static_cast<RealType>(myComm->size());
       AverageCache *= nth;
-      //SquaredAverageCache *= nth;
       //do not weight weightInd
       for(int i=1; i<PropertyCache.size(); i++)
         PropertyCache[i] *= nth;
@@ -358,7 +343,6 @@ void EstimatorManagerBase::collectBlockAverages(int num_threads)
   }
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
-  //varAccumulator(SquaredAverageCache[0]-AverageCache[0]*AverageCache[0]);
   varAccumulator(AverageCache[1]-AverageCache[0]*AverageCache[0]);
   if(Archive)
   {
@@ -371,7 +355,6 @@ void EstimatorManagerBase::collectBlockAverages(int num_threads)
     *Archive << std::endl;
     for(int o=0; o<h5desc.size(); ++o)
       h5desc[o]->write(AverageCache.data());
-      //h5desc[o]->write(AverageCache.data(),SquaredAverageCache.data());
     H5Fflush(h_file,H5F_SCOPE_LOCAL);
   }
   RecordCount++;

@@ -73,7 +73,6 @@ struct ScalarEstimatorBase
     for(int i=0; i<scalars.size(); i++)
     {
       *first++ = scalars[i].mean();
-//      scalars_saved[i]=scalars[i]; //save current block
       scalars[i].clear();
     }
   }
@@ -124,8 +123,6 @@ struct ScalarEstimatorBase
   int LastIndex;
   ///scalars to be measured
   std::vector<accumulator_type> scalars;
-  ///scalars saved
-//  std::vector<accumulator_type> scalars_saved;
 
 };
 }

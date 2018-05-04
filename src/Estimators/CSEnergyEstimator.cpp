@@ -46,7 +46,6 @@ namespace qmcplusplus {
 
     scalars.resize(NumCopies  + 
 		   h_components.size()*(NumCopies+NumCopies*(NumCopies-1)/2));
-    //scalars_saved.resize(scalars.size());
   }
 
   ScalarEstimatorBase* CSEnergyEstimator::clone()

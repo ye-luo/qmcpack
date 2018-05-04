@@ -29,7 +29,6 @@ struct LocalEnergyOnlyEstimator: public ScalarEstimatorBase
   inline LocalEnergyOnlyEstimator()
   {
     scalars.resize(2);
-    //scalars_saved.resize(2);
   }
 
   inline void accumulate(const MCWalkerConfiguration& W
