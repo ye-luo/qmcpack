@@ -48,7 +48,6 @@
          <parameter name="blocks"           >    200           </parameter>
          <parameter name="subSteps"         >    1             </parameter>
          <parameter name="nonlocalpp"       >    yes           </parameter>
-         <parameter name="useBuffer"        >    yes           </parameter>
          <parameter name="walkers"          >    1             </parameter>
          <parameter name="minwalkers"       >    0.5           </parameter>
          <parameter name="maxWeight"        >    1000000000.0  </parameter>
