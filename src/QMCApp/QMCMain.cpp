@@ -49,7 +49,7 @@ extern "C"
 }
 #endif
 #ifdef BUILD_AFQMC
-#include "AFQMC/AFQMCFactory.h"
+#include "AFQMC/AFQMCMain.h"
 #endif
 #ifdef BUILD_FCIQMC
 #include "FCIQMC/App/SQCFactory.h"
@@ -158,25 +158,11 @@ bool QMCMain::execute()
   {
     NewTimer* t2 = TimerManager.createTimer("Total", timer_level_coarse);
     ScopedTimer t2_scope(t2);
-    app_log() << std::endl
-              << "/*************************************************\n"
-              << " ********  This is an AFQMC calculation   ********\n"
-              << " *************************************************" << std::endl;
-    xmlNodePtr cur = XmlDocStack.top()->getRoot();
-
     xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
     //initialize the random number generator
     xmlNodePtr rptr = myRandomControl.initialize(m_context);
 
-    auto world = boost::mpi3::environment::get_world_instance();
-    afqmc::AFQMCFactory afqmc_fac(world);
-    if (!afqmc_fac.parse(cur))
-    {
-      app_log() << " Error in AFQMCFactory::parse() ." << std::endl;
-      return false;
-    }
-    cur = XmlDocStack.top()->getRoot();
-    return afqmc_fac.execute(cur);
+    return afqmc::AFQMCMain(boost::mpi3::environment::get_world_instance(), XmlDocStack.top()->getRoot(), app_log());
   }
 #else
   if (simulationType == "afqmc")

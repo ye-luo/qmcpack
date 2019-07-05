@@ -5,6 +5,7 @@ SET(AFQMC_DEBUG 3)
 # Sources
 #-------------------------------------------------------------------
 SET (AFQMC_SRCS
+  AFQMCMain.cpp
   AFQMCFactory.cpp
   Drivers/DriverFactory.cpp
   Drivers/AFQMCDriver.cpp
@@ -65,6 +66,7 @@ ELSE(ENABLE_CUDA)
   ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 ENDIF(ENABLE_CUDA)
 
+TARGET_LINK_LIBRARIES( afqmc PRIVATE boost-header-only )
 
 IF (BUILD_UNIT_TESTS)
   INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
