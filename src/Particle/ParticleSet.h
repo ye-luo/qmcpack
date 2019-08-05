@@ -61,12 +61,12 @@ struct MCDataType
 
 /** Specialized paritlce class for atomistic simulations
  *
- * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
+ * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits>.
  * The ParticleLayout class represents a supercell with/without periodic boundary
  * conditions. The ParticleLayout class also takes care of spatial decompositions
  * for efficient evaluations for the interactions with a finite cutoff.
  */
-class ParticleSet : public QMCTraits, public OhmmsElementBase, public PtclOnLatticeTraits
+class ParticleSet : public QMCTraits, public PtclOnLatticeTraits
 {
 public:
   ///@typedef walker type
@@ -278,6 +278,8 @@ public:
   ///retrun the const SpeciesSet of this particle set
   inline const SpeciesSet& getSpeciesSet() const { return mySpecies; }
 
+  ///return myName
+  inline const std::string& getName() const { return myName; }
   ///return parent's name
   inline const std::string& parentName() const { return ParentName; }
   inline void setName(const std::string& aname)
@@ -635,6 +637,8 @@ protected:
    */
   void computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos);
 
+  ///name of the particle
+  std::string myName;
 };
 } // namespace qmcplusplus
 #endif

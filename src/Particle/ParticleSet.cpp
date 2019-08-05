@@ -73,10 +73,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   //need explicit copy:
   Mass = p.Mass;
   Z    = p.Z;
-  //std::ostringstream o;
-  //o<<p.getName()<<ObjectTag;
-  //this->setName(o.str());
-  //app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << std::endl;
   myName              = p.getName();
   PropertyList.Names  = p.PropertyList.Names;
   PropertyList.Values = p.PropertyList.Values;
@@ -280,7 +276,7 @@ void ParticleSet::randomizeFromSource(ParticleSet& src)
 ///write to a std::ostream
 bool ParticleSet::get(std::ostream& os) const
 {
-  os << "  ParticleSet '" << getName() << "' contains " << TotalNum << " particles : ";
+  os << "  ParticleSet '" << myName << "' contains " << TotalNum << " particles : ";
   if (SubPtcl.size() > 0)
     for (int i = 0; i < SubPtcl.size() - 1; i++)
       os << " " << mySpecies.speciesName[i] << "(" << SubPtcl[i + 1] - SubPtcl[i] << ")";
@@ -662,8 +658,6 @@ void ParticleSet::clearDistanceTables()
   //Physically remove the tables
   delete_iter(DistTables.begin(), DistTables.end());
   DistTables.clear();
-  //for(int i=0; i< DistTables.size(); i++) DistanceTable::removeTable(DistTables[i]->getName());
-  //DistTables.erase(DistTables.begin(),DistTables.end());
 }
 
 int ParticleSet::addPropertyHistory(int leng)

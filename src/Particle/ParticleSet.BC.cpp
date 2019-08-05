@@ -122,7 +122,7 @@ void ParticleSet::createSK()
   int massind    = mySpecies.addAttribute("mass");
   if (beforemass == massind)
   {
-    app_log() << "  ParticleSet::createSK setting mass of  " << getName() << " to 1.0" << std::endl;
+    app_log() << "  ParticleSet::createSK setting mass of  " << myName << " to 1.0" << std::endl;
     for (int ig = 0; ig < mySpecies.getTotalNum(); ++ig)
       mySpecies(massind, ig) = 1.0;
   }
