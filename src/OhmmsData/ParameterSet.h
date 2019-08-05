@@ -20,20 +20,17 @@
 #include "OhmmsData/OhmmsParameter.h"
 
 /** class to handle a set of parameters
- *
- *This may become an inherited class from OhmmsElementBase.
  */
-struct ParameterSet : public OhmmsElementBase
+class ParameterSet
 {
-  //  public std::map<std::string, OhmmsElementBase*> {
-
+public:
   typedef std::map<std::string, OhmmsElementBase*> Container_t;
   typedef Container_t::iterator iterator;
   typedef Container_t::const_iterator const_iterator;
 
-  Container_t m_param;
-
-  ParameterSet(const char* aname = "parameter") : OhmmsElementBase(aname) {}
+  ParameterSet(const std::string aname = "unnamed")
+    : myName(aname)
+  {}
 
   ~ParameterSet()
   {
@@ -122,7 +119,6 @@ struct ParameterSet : public OhmmsElementBase
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  // INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
   inline void add(PDT& aparam, const char* aname_in, const char* uname)
   {
     std::string aname(aname_in);
@@ -135,7 +131,6 @@ struct ParameterSet : public OhmmsElementBase
   }
 
   template<class PDT>
-  //INLINE_ALL void setValue(const std::string& aname, PDT aval){
   inline void setValue(const std::string& aname_in, PDT aval)
   {
     std::string aname(aname_in);
@@ -146,5 +141,11 @@ struct ParameterSet : public OhmmsElementBase
       (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);
     }
   }
+
+private:
+  // all the parameters hold by this set
+  Container_t m_param;
+  // name
+  const std::string myName;
 };
 #endif /*OHMMS_OHMMSPARAMETERSET_H*/

@@ -39,9 +39,9 @@ PWParameterSet::PWParameterSet(Communicate* comm)
       twistTag("twist"),
       bandTag("band"),
       spinTag("spin"),
-      eigvecTag("eigenvector")
+      eigvecTag("eigenvector"),
+      m_param("h5tag")
 {
-  m_param.setName("h5tag");
   m_param.add(twistIndex, "twistIndex", "int");
   m_param.add(Rcut, "rcut", "double");
   m_param.add(BufferRadius, "bufferLayer", "double");
