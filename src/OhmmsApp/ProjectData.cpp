@@ -28,12 +28,7 @@ ProjectData::ProjectData(const char* aname) : m_title("asample"), m_host("none")
 {
   myComm = OHMMS::Controller;
   if (aname == 0)
-  {
     m_title = getDateAndTime("%Y%m%dT%H%M");
-    setName(m_title);
-  }
-  else
-    setName(aname);
 }
 
 void ProjectData::setCommunicator(Communicate* c) { myComm = c; }

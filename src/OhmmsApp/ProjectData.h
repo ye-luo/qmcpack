@@ -26,12 +26,8 @@ namespace qmcplusplus
 {
 /**class ProjectData
  *\brief Encapsulate data for a project
- *
- * Default: myName = "Project"
- * Should not modify the name, since composite types, such as MDRunData, use the name.
- *
  */
-struct ProjectData : public OhmmsElementBase
+struct ProjectData
 {
   /// constructor
   ProjectData(const char* aname = 0);
@@ -96,6 +92,7 @@ struct ProjectData : public OhmmsElementBase
 
   ///the xml node for <Project/>
   xmlNodePtr m_cur;
+
 };
 } // namespace qmcplusplus
 

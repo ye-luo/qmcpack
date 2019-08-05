@@ -37,7 +37,6 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   // If no name given, it gets set to time and date
   //   and the title is set equal to the name
   REQUIRE(std::string(proj1.m_title).size() > 0);
-  REQUIRE(std::string(proj1.m_title) == proj1.getName());
 
 
   ProjectData proj2("test");
@@ -46,7 +45,6 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj2.m_series == 1);
 
   REQUIRE(proj2.m_title == std::string("asample"));
-  REQUIRE(proj2.getName() == std::string("test"));
 
   proj2.setCommunicator(c);
   std::stringstream o2;
