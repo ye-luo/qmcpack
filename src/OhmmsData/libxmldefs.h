@@ -36,32 +36,6 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
   //std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
 }
 
-/**\file libxmldefs.h
- *\brief A collection of put/get functions to read from or write to a xmlNode defined in libxml2.
- *
- */
-/*!\brief assign a value from a node. Use specialization for classes.
- *\param a reference to a value to be assigned
- *\param cur current node
- *\return ture if successful
- *
- *If operator >> is implemented for a class, no specialization is required.
- *For instance, no specialization is necessary for intrinsic data types.
- *A simle class that reads the temperature from a xml node
- *
- \<parameter name="temperature" condition="K"\>100\</parameter\>
- *
- \code
-  struct A: public OhmmsElementBase {
-
-    double Temperature;
-
-    bool put(xmlNodePtr cur) {
-      putContent(Temperature,cur);
-    }
-  };
- \endcode
- */
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
 {
