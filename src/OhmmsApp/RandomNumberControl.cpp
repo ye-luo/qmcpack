@@ -42,8 +42,8 @@ std::vector<RandomGenerator_t*> RandomNumberControl::Children;
 RandomGenerator_t::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
-RandomNumberControl::RandomNumberControl(const char* aname)
-    : OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL) //, Offset(5)
+RandomNumberControl::RandomNumberControl()
+    : NeverBeenInitialized(true), myCur(nullptr)
 {}
 
 /// generic output

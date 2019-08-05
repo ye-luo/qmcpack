@@ -17,8 +17,8 @@
 #ifndef QMCPLUSPLUS_INITMOLECULARSYSTEM_H
 #define QMCPLUSPLUS_INITMOLECULARSYSTEM_H
 
-#include "OhmmsData/OhmmsElementBase.h"
 #include <map>
+#include "OhmmsData/libxmldefs.h"
 
 namespace qmcplusplus
 {
@@ -27,10 +27,10 @@ class ParticleSetPool;
 
 /* Engine to initialize the initial electronic structure for a molecular system
  */
-class InitMolecularSystem : public OhmmsElementBase
+class InitMolecularSystem
 {
 public:
-  InitMolecularSystem(ParticleSetPool* pset, const char* aname = "mosystem");
+  InitMolecularSystem(ParticleSetPool* pset);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);

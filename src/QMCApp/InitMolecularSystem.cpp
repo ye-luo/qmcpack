@@ -29,8 +29,8 @@ namespace qmcplusplus
 {
 typedef QMCTraits::RealType RealType;
 
-InitMolecularSystem::InitMolecularSystem(ParticleSetPool* pset, const char* aname)
-    : OhmmsElementBase(aname), ptclPool(pset)
+InitMolecularSystem::InitMolecularSystem(ParticleSetPool* pset)
+    : ptclPool(pset)
 {}
 
 bool InitMolecularSystem::put(xmlNodePtr cur)

@@ -14,7 +14,6 @@
 
 #ifndef OHMMS_RANDOMNUMBERCONTROL_H__
 #define OHMMS_RANDOMNUMBERCONTROL_H__
-#include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
 #include <io/hdf_archive.h>
@@ -25,12 +24,9 @@ namespace qmcplusplus
 {
 /**class RandomNumberControl
  *\brief Encapsulate data to initialize and save the status of the random number generator
- *
- * Default:  myName = "random"
- * 2007-12-01
- *   Use PrimeNumbers to generate random seeds.
+ * Use PrimeNumbers to generate random seeds.
  */
-class RandomNumberControl : public OhmmsElementBase
+class RandomNumberControl
 {
 public:
   typedef RandomGenerator_t::uint_type uint_type;
@@ -39,7 +35,7 @@ public:
   static std::vector<RandomGenerator_t*> Children;
 
   /// constructors and destructors
-  RandomNumberControl(const char* aname = "random");
+  RandomNumberControl();
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
