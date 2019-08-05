@@ -475,11 +475,11 @@ void XMLSaveParticle::report(int iter)
   // writing a meta file
   std::ofstream fxml(FileName.c_str()); // always overwrite
   fxml << "<?xml version=\"1.0\"?>" << std::endl;
-  get(fxml, 1);
+  get(fxml);
   fxml.close();
 }
 
-void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
+void XMLSaveParticle::get(std::ostream& fxml) const
 {
   fxml.setf(std::ios::scientific);
   fxml.precision(15);
@@ -491,80 +491,16 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
   }
   //only write the local particles
   int nloc = ref_.getTotalNum();
-  if (olevel)
+  for (int iat = 0; iat < nloc; iat++)
+    fxml << ref_.R[iat] << std::endl;
+  for (int iat = 0; iat < nloc; iat++)
   {
-    /*
-    Particle_t::PAListIterator it = ref_.first_attrib();
-    while(it != ref_.last_attrib())
-    {
-      OhmmsObject* ooref= (*it).second;
-//       if(ooref->objName() == ionid_tag) {
-//  	for(int iat=0; iat<nloc; iat++) {
-//  	  fxml << IonName[iat] << " ";
-//  	  if(iat%20 == 19) fxml << std::endl;
-//  	}
-//       } else {
-      int t_id = ref_AttribList.getAttribType(otype);
-      int o_id = ooref->id();
-      if(t_id == PA_IndexType)
-      {
-        const ParticleIndex_t* itmp=dynamic_cast<ParticleIndex_t*>(ooref);
-        for(int iat=0; iat<nloc; iat++)
-        {
-          fxml << (*itmp)[iat] << " ";
-          if(iat%20 == 19)
-            fxml << std::endl;
-        }
-      }
-      else if(t_id == PA_ScalarType)
-      {
-        fxml.precision(6);
-        const ParticleScalar_t* stmp=dynamic_cast<ParticleScalar_t*>(ooref);
-        for(int iat=0; iat<nloc; iat++)
-        {
-          fxml << (*stmp)[iat] << " ";
-          if(iat%5 == 4)
-            fxml << std::endl;
-        }
-        if(nloc%5 != 0)
-          fxml<< std::endl;
-      }
-      else if (t_id == PA_PositionType)
-      {
-        fxml.precision(15);
-        const ParticlePos_t* rtmp=dynamic_cast<ParticlePos_t*>(ooref);
-        for(int iat=0; iat<nloc; iat++)
-        {
-          fxml << (*rtmp)[iat] << std::endl;
-        }
-      }
-      else if (t_id == PA_TensorType)
-      {
-        fxml.precision(15);
-        const ParticleTensor_t* ttmp=dynamic_cast<ParticleTensor_t*>(ooref);
-        for(int iat=0; iat<nloc; iat++)
-        {
-          fxml << (*ttmp)[iat];
-        }
-      }
-      //      }
-      it++;
-    }
-    */
-  }
-  else
-  {
-    for (int iat = 0; iat < nloc; iat++)
-      fxml << ref_.R[iat] << std::endl;
-    for (int iat = 0; iat < nloc; iat++)
-    {
-      fxml << ref_.GroupID[iat] << " ";
-      if (iat % 20 == 19)
-        fxml << std::endl;
-    }
-    if (nloc % 20 != 19)
+    fxml << ref_.GroupID[iat] << " ";
+    if (iat % 20 == 19)
       fxml << std::endl;
   }
+  if (nloc % 20 != 19)
+    fxml << std::endl;
 }
 
 bool XMLSaveParticle::put(xmlNodePtr cur) { return true; }

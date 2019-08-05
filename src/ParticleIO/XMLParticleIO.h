@@ -171,7 +171,7 @@ public:
 
   bool put(xmlNodePtr cur);
 
-  void get(std::ostream& os, int olevel) const;
+  void get(std::ostream& os) const;
 
   xmlNodePtr createNode(bool addlattice);
 
