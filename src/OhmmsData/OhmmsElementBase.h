@@ -93,12 +93,6 @@ public:
     put(stream);
   }
 
-  ///write the start of a node
-  virtual void begin_node(std::ostream& os) const {}
-
-  ///write the end of a node
-  virtual void end_node(std::ostream& os) const {}
-
 protected:
   ///the type of IO mode: default is useLIBXML
   int myIOMode;

@@ -481,7 +481,6 @@ void XMLSaveParticle::report(int iter)
 
 void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
 {
-  ref_.begin_node(fxml);
   fxml.setf(std::ios::scientific);
   fxml.precision(15);
   LatticeXMLWriter latticeout(ref_.Lattice);
@@ -500,16 +499,13 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
     {
       OhmmsObject* ooref= (*it).second;
 //       if(ooref->objName() == ionid_tag) {
-// 	IonName.begin_node(fxml);
 //  	for(int iat=0; iat<nloc; iat++) {
 //  	  fxml << IonName[iat] << " ";
 //  	  if(iat%20 == 19) fxml << std::endl;
 //  	}
-// 	IonName.end_node(fxml);
 //       } else {
       int t_id = ref_AttribList.getAttribType(otype);
       int o_id = ooref->id();
-      ooref->begin_node(fxml);
       if(t_id == PA_IndexType)
       {
         const ParticleIndex_t* itmp=dynamic_cast<ParticleIndex_t*>(ooref);
@@ -551,7 +547,6 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
           fxml << (*ttmp)[iat];
         }
       }
-      ooref->end_node(fxml);
       //      }
       it++;
     }
@@ -559,11 +554,8 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
   }
   else
   {
-    ref_.R.begin_node(fxml);
     for (int iat = 0; iat < nloc; iat++)
       fxml << ref_.R[iat] << std::endl;
-    ref_.R.end_node(fxml);
-    ref_.GroupID.begin_node(fxml);
     for (int iat = 0; iat < nloc; iat++)
     {
       fxml << ref_.GroupID[iat] << " ";
@@ -572,9 +564,7 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
     }
     if (nloc % 20 != 19)
       fxml << std::endl;
-    ref_.GroupID.end_node(fxml);
   }
-  ref_.end_node(fxml);
 }
 
 bool XMLSaveParticle::put(xmlNodePtr cur) { return true; }
