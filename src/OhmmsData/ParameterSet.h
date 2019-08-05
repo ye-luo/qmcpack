@@ -28,7 +28,7 @@ public:
   typedef Container_t::iterator iterator;
   typedef Container_t::const_iterator const_iterator;
 
-  ParameterSet(const std::string aname = "unnamed")
+  ParameterSet(const std::string aname = "parameter")
     : myName(aname)
   {}
 
