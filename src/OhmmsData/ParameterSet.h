@@ -34,24 +34,14 @@ public:
 
   ~ParameterSet()
   {
-    iterator it(m_param.begin());
-    iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      delete (*it).second;
-      ++it;
-    }
+    for (const auto& param : m_param)
+      delete param.second;
   }
 
   inline bool get(std::ostream& os) const
   {
-    const_iterator it(m_param.begin());
-    const_iterator it_end(m_param.end());
-    while (it != it_end)
-    {
-      (*it).second->get(os);
-      ++it;
-    }
+    for (const auto& param : m_param)
+      param.second->get(os);
     return true;
   }
 
