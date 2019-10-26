@@ -158,7 +158,7 @@ bool SPOSet::put(xmlNodePtr cur)
   //initialize the number of orbital by the basis set size
   int norb = BasisSetSize;
   std::string debugc("no");
-  bool PBC                     = false;
+  bool PBC = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb, "orbitals");
   aAttrib.add(norb, "size");

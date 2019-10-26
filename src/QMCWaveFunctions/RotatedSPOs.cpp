@@ -19,13 +19,11 @@
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(SPOSet* spos)
-    : SPOSet(spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false), nel_major_(0)
+    : SPOSet(spos->hasIonDerivs(), true), Phi(spos), is_supplied_(false), nel_major_(0)
 {
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
-
-RotatedSPOs::~RotatedSPOs() {}
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
@@ -67,9 +65,9 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
   int p, q;
   int nparams_active = m_act_rot_inds.size();
 
-  app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
-  if (params_supplied)
-    if (nparams_active != params.size())
+  app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params_.size() << std::endl;
+  if (is_supplied_)
+    if (nparams_active != params_.size())
       APP_ABORT("The number of supplied orbital rotation parameters does not match number prdouced by the slater "
                 "expansion. \n");
 
@@ -83,9 +81,9 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
          << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
     // If the user input parameteres, use those. Otherwise, initialize the parameters to zero
-    if (params_supplied)
+    if (is_supplied_)
     {
-      myVars.insert(sstr.str(), params[i]);
+      myVars.insert(sstr.str(), params_[i]);
     }
     else
     {
@@ -207,11 +205,11 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix_t& mat)
 
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
-                                         const opt_variables_type& optvars,
-                                         std::vector<ValueType>& dlogpsi,
-                                         std::vector<ValueType>& dhpsioverpsi,
-                                         const int& FirstIndex,
-                                         const int& LastIndex)
+                                      const opt_variables_type& optvars,
+                                      std::vector<ValueType>& dlogpsi,
+                                      std::vector<ValueType>& dhpsioverpsi,
+                                      const int FirstIndex,
+                                      const int LastIndex)
 {
   const size_t nel = LastIndex - FirstIndex;
   const size_t nmo = Phi->getOrbitalSetSize();
@@ -310,31 +308,31 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
-                                         const opt_variables_type& optvars,
-                                         std::vector<ValueType>& dlogpsi,
-                                         std::vector<ValueType>& dhpsioverpsi,
-                                         const ValueType& psiCurrent,
-                                         const std::vector<ValueType>& Coeff,
-                                         const std::vector<size_t>& C2node_up,
-                                         const std::vector<size_t>& C2node_dn,
-                                         const ValueVector_t& detValues_up,
-                                         const ValueVector_t& detValues_dn,
-                                         const GradMatrix_t& grads_up,
-                                         const GradMatrix_t& grads_dn,
-                                         const ValueMatrix_t& lapls_up,
-                                         const ValueMatrix_t& lapls_dn,
-                                         const ValueMatrix_t& M_up,
-                                         const ValueMatrix_t& M_dn,
-                                         const ValueMatrix_t& Minv_up,
-                                         const ValueMatrix_t& Minv_dn,
-                                         const GradMatrix_t& B_grad,
-                                         const ValueMatrix_t& B_lapl,
-                                         const std::vector<int>& detData_up,
-                                         const size_t N1,
-                                         const size_t N2,
-                                         const size_t NP1,
-                                         const size_t NP2,
-                                         const std::vector<std::vector<int>>& lookup_tbl)
+                                      const opt_variables_type& optvars,
+                                      std::vector<ValueType>& dlogpsi,
+                                      std::vector<ValueType>& dhpsioverpsi,
+                                      const ValueType& psiCurrent,
+                                      const std::vector<ValueType>& Coeff,
+                                      const std::vector<size_t>& C2node_up,
+                                      const std::vector<size_t>& C2node_dn,
+                                      const ValueVector_t& detValues_up,
+                                      const ValueVector_t& detValues_dn,
+                                      const GradMatrix_t& grads_up,
+                                      const GradMatrix_t& grads_dn,
+                                      const ValueMatrix_t& lapls_up,
+                                      const ValueMatrix_t& lapls_dn,
+                                      const ValueMatrix_t& M_up,
+                                      const ValueMatrix_t& M_dn,
+                                      const ValueMatrix_t& Minv_up,
+                                      const ValueMatrix_t& Minv_dn,
+                                      const GradMatrix_t& B_grad,
+                                      const ValueMatrix_t& B_lapl,
+                                      const std::vector<int>& detData_up,
+                                      const size_t N1,
+                                      const size_t N2,
+                                      const size_t NP1,
+                                      const size_t NP2,
+                                      const std::vector<std::vector<int>>& lookup_tbl)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
@@ -401,33 +399,33 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 }
 
 void RotatedSPOs::table_method_eval(std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi,
-                                       const ParticleSet::ParticleLaplacian_t& myL_J,
-                                       const ParticleSet::ParticleGradient_t& myG_J,
-                                       const size_t nel,
-                                       const size_t nmo,
-                                       const ValueType& psiCurrent,
-                                       const std::vector<RealType>& Coeff,
-                                       const std::vector<size_t>& C2node_up,
-                                       const std::vector<size_t>& C2node_dn,
-                                       const ValueVector_t& detValues_up,
-                                       const ValueVector_t& detValues_dn,
-                                       const GradMatrix_t& grads_up,
-                                       const GradMatrix_t& grads_dn,
-                                       const ValueMatrix_t& lapls_up,
-                                       const ValueMatrix_t& lapls_dn,
-                                       const ValueMatrix_t& M_up,
-                                       const ValueMatrix_t& M_dn,
-                                       const ValueMatrix_t& Minv_up,
-                                       const ValueMatrix_t& Minv_dn,
-                                       const GradMatrix_t& B_grad,
-                                       const ValueMatrix_t& B_lapl,
-                                       const std::vector<int>& detData_up,
-                                       const size_t N1,
-                                       const size_t N2,
-                                       const size_t NP1,
-                                       const size_t NP2,
-                                       const std::vector<std::vector<int>>& lookup_tbl)
+                                    std::vector<ValueType>& dhpsioverpsi,
+                                    const ParticleSet::ParticleLaplacian_t& myL_J,
+                                    const ParticleSet::ParticleGradient_t& myG_J,
+                                    const size_t nel,
+                                    const size_t nmo,
+                                    const ValueType& psiCurrent,
+                                    const std::vector<RealType>& Coeff,
+                                    const std::vector<size_t>& C2node_up,
+                                    const std::vector<size_t>& C2node_dn,
+                                    const ValueVector_t& detValues_up,
+                                    const ValueVector_t& detValues_dn,
+                                    const GradMatrix_t& grads_up,
+                                    const GradMatrix_t& grads_dn,
+                                    const ValueMatrix_t& lapls_up,
+                                    const ValueMatrix_t& lapls_dn,
+                                    const ValueMatrix_t& M_up,
+                                    const ValueMatrix_t& M_dn,
+                                    const ValueMatrix_t& Minv_up,
+                                    const ValueMatrix_t& Minv_dn,
+                                    const GradMatrix_t& B_grad,
+                                    const ValueMatrix_t& B_lapl,
+                                    const std::vector<int>& detData_up,
+                                    const size_t N1,
+                                    const size_t N2,
+                                    const size_t NP1,
+                                    const size_t NP2,
+                                    const std::vector<std::vector<int>>& lookup_tbl)
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GUIDE TO THE MATICES BEING BUILT
 ----------------------------------------------
@@ -854,11 +852,10 @@ SPOSet* RotatedSPOs::makeClone() const
 {
   RotatedSPOs* myclone = new RotatedSPOs(Phi->makeClone());
 
-  myclone->IsCloned        = true;
-  myclone->params          = this->params;
-  myclone->params_supplied = this->params_supplied;
-  myclone->m_act_rot_inds  = this->m_act_rot_inds;
-  myclone->myVars          = this->myVars;
+  myclone->params_        = this->params_;
+  myclone->is_supplied_   = this->is_supplied_;
+  myclone->m_act_rot_inds = this->m_act_rot_inds;
+  myclone->myVars         = this->myVars;
   return myclone;
 }
 

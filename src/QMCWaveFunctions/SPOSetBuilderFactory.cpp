@@ -300,12 +300,13 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
         std::string cname((const char*)(tcur->name));
         if (cname == "opt_vars")
         {
-          rot_spo->params_supplied = true;
-          putContent(rot_spo->params, tcur);
+          std::vector<SPOSet::RealType> parameters_from_input;
+          putContent(parameters_from_input, tcur);
+          rot_spo->supplyParameters(std::move(parameters_from_input));
         }
         tcur = tcur->next;
       }
-      spo = rot_spo;
+      spo             = rot_spo;
       spo->objectName = sname;
 #endif
     }
