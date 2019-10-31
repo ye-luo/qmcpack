@@ -61,10 +61,10 @@ QMCTraits::IndexType DMCBatched::calc_default_local_walkers(IndexType walkers_pe
   return local_walkers;
 }
 
-void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
+void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& hamiltonian)
 {
-  golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                                      dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+  hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
+                               dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
 void DMCBatched::resetUpdateEngines()

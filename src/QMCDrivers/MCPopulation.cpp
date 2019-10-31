@@ -19,11 +19,12 @@ namespace qmcplusplus
 {
 MCPopulation::MCPopulation(int num_ranks,
                            MCWalkerConfiguration& mcwc,
-                           ParticleSet* elecs,
-                           TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
+                           ParticleSet& elecs,
+                           TrialWaveFunction& trial_wf,
+                           QMCHamiltonian& hamiltonian,
                            int this_rank)
-    : num_ranks_(num_ranks), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), rank_(this_rank)
+    : num_ranks_(num_ranks), gold_elec_particle_set_(elecs), gold_trial_wavefunction_(trial_wf), gold_hamiltonian_(hamiltonian),
+    walker_elec_particle_sets_{elecs}, walker_trial_wavefunctions_{trial_wf}, walker_hamiltonians_{hamiltonian}, rank_(this_rank)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
@@ -60,18 +61,9 @@ void MCPopulation::createWalkerInplace(UPtr<MCPWalker>& walker_ptr)
 {
   //SO this would be where the walker reuse hack would go
   walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
-  walker_ptr->R = elec_particle_set_->R;
+  walker_ptr->R = gold_elec_particle_set_.R;
   walker_ptr->registerData();
-  walker_ptr->Properties = elec_particle_set_->Properties;
-}
-
-/** we could also search for walker_ptr
- */
-void MCPopulation::allocateWalkerStuffInplace(int walker_index)
-{
-  walker_trial_wavefunctions_[walker_index]->registerData(*(walker_elec_particle_sets_[walker_index]),
-                                                          walkers_[walker_index]->DataSet);
-  walkers_[walker_index]->DataSet.allocate();
+  walker_ptr->Properties = gold_elec_particle_set_.Properties;
 }
 
 /** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
@@ -84,7 +76,7 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 {
   num_local_walkers_ = num_walkers;
   // Ye: need to resize walker_t and ParticleSet Properties
-  elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
+  gold_elec_particle_set_.Properties.resize(1, gold_elec_particle_set_.PropertyList.size());
 
   walkers_.resize(num_walkers);
 
@@ -107,27 +99,24 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 
   outputManager.pause();
 
-  // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
-  // of what different wave function components depend on. I'm going to try and create a hollow elec PS
-  // with an eye toward removing the ParticleSet dependency of WFC components in the future.
-  walker_elec_particle_sets_.resize(num_walkers);
-  std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
-                [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
-                  elec_ps_ptr.reset(new ParticleSet(*elec_particle_set_));
-                });
-
-  auto it_weps = walker_elec_particle_sets_.begin();
-  walker_trial_wavefunctions_.resize(num_walkers);
-  auto it_wtw = walker_trial_wavefunctions_.begin();
-  walker_hamiltonians_.resize(num_walkers);
-  auto it_ham = walker_hamiltonians_.begin();
-  while (it_wtw != walker_trial_wavefunctions_.end())
+  const size_t num_owned_clones = owned_elec_particle_sets_.size();
+  // need to make more clones if owned copies + gold is not sufficient
+  if (num_owned_clones < num_walkers - 1)
   {
-    it_wtw->reset(trial_wf_->makeClone(**it_weps));
-    it_ham->reset(hamiltonian_->makeClone(**it_weps, **it_wtw));
-    ++it_weps;
-    ++it_wtw;
-    ++it_ham;
+    owned_elec_particle_sets_.resize(num_walkers-1);
+    owned_trial_wavefunctions_.resize(num_walkers-1);
+    owned_hamiltonians_.resize(num_walkers-1);
+
+    for(size_t i = num_owned_clones; i < num_walkers-1; i++)
+    {
+      owned_elec_particle_sets_.at(i).reset(new ParticleSet(gold_elec_particle_set_));
+      owned_trial_wavefunctions_.at(i).reset(gold_trial_wavefunction_.makeClone(*owned_elec_particle_sets_.at(i)));
+      owned_hamiltonians_.at(i).reset(gold_hamiltonian_.makeClone(*owned_elec_particle_sets_.at(i), *owned_trial_wavefunctions_.at(i)));
+
+      walker_elec_particle_sets_.push_back(*owned_elec_particle_sets_.at(i));
+      walker_trial_wavefunctions_.push_back(*owned_trial_wavefunctions_.at(i));
+      walker_hamiltonians_.push_back(*owned_hamiltonians_.at(i));
+    }
   }
 
   outputManager.resume();
@@ -161,18 +150,20 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
   else
   {
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
-    walkers_.back()->R = elec_particle_set_->R;
+    walkers_.back()->R = gold_elec_particle_set_.R;
     walkers_.back()->registerData();
-    walkers_.back()->Properties = elec_particle_set_->Properties;  
+    walkers_.back()->Properties = gold_elec_particle_set_.Properties;  
   }
+  /*
   walker_elec_particle_sets_.push_back(std::make_unique<ParticleSet>(*elec_particle_set_));
   walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
   walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
   walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
   walker_hamiltonians_.back().reset(
       hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));  
-  outputManager.resume();
   walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
+  */
+  outputManager.resume();
   return *(walkers_.back());
 }
 

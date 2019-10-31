@@ -63,47 +63,49 @@ private:
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
   size_t size_dataset_;
-  // Should be
-  // std::shared_ptr<TrialWaveFunction> trial_wf_;
-  // std::shared_ptr<ParticleSet> elec_particle_set_;
-  // std::shared_ptr<QMCHamiltonian> hamiltonian_;
-  // Are raw pointers. This is necessary if MCPopulation is going to be moved by value into QMCDriverNew
-  // and possible moved out into the next driver later.
-  // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
-  // MCPopulation should have QMCMain scope eventually and the driver will just have a refrence to it.
-  TrialWaveFunction* trial_wf_;
-  ParticleSet* elec_particle_set_;
-  QMCHamiltonian* hamiltonian_;
-  // At the moment these are "clones" but I think this design pattern smells.
-  UPtrVector<ParticleSet> walker_elec_particle_sets_;
-  UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
-  UPtrVector<QMCHamiltonian> walker_hamiltonians_;
+  /** Gold objects are references to the system components evolving during random walking.
+   *  They are not owned by the population but they are the sources of clones.
+   */
+  ParticleSet& gold_elec_particle_set_;
+  TrialWaveFunction& gold_trial_wavefunction_;
+  QMCHamiltonian& gold_hamiltonian_;
+  /** Clones of gold objects
+   *  They are owned by the population.
+   */
+  UPtrVector<ParticleSet> owned_elec_particle_sets_;
+  UPtrVector<TrialWaveFunction> owned_trial_wavefunctions_;
+  UPtrVector<QMCHamiltonian> owned_hamiltonians_;
+  /** population objects participating random walking
+   *  They are formed by gold and clone objects.
+   */
+  RefVector<ParticleSet> walker_elec_particle_sets_;
+  RefVector<TrialWaveFunction> walker_trial_wavefunctions_;
+  RefVector<QMCHamiltonian> walker_hamiltonians_;
   // This should perhaps just be aquired from comm but currently MCPopulation
   // is innocent of comm, Every object needing a copy is suboptimal.
   int rank_;
 
 public:
-  MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
    *  in QMCDriverFactory.
    */
   MCPopulation(int num_ranks,
                MCWalkerConfiguration& mcwc,
-               ParticleSet* elecs,
-               TrialWaveFunction* trial_wf,
-               QMCHamiltonian* hamiltonian_,
+               ParticleSet& elecs,
+               TrialWaveFunction& trial_wf,
+               QMCHamiltonian& hamiltonian,
                int this_rank = 0);
   //MCPopulation(int num_ranks, int num_particles) : num_ranks_(num_ranks), num_particles_(num_particles) {}
   MCPopulation(int num_ranks,
-               ParticleSet* elecs,
-               TrialWaveFunction* trial_wf,
-               QMCHamiltonian* hamiltonian,
+               ParticleSet& elecs,
+               TrialWaveFunction& trial_wf,
+               QMCHamiltonian& hamiltonian,
                int this_rank = 0)
       : num_ranks_(num_ranks),
-        num_particles_(elecs->R.size()),
-        trial_wf_(trial_wf),
-        elec_particle_set_(elecs),
-        hamiltonian_(hamiltonian),
+        num_particles_(elecs.R.size()),
+        gold_trial_wavefunction_(trial_wf),
+        gold_elec_particle_set_(elecs),
+        gold_hamiltonian_(hamiltonian),
         rank_(this_rank)
   {}
 
@@ -121,7 +123,6 @@ public:
   void killWalker(MCPWalker&);
   void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
-  void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
   void createWalkers();
@@ -153,7 +154,7 @@ public:
         // possible that walkers_all < walkers_per_group * group_size
         if (it_walkers == walkers_.end())
           break;
-        (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
+        (**it_group).addWalker(**it_walkers, *it_walker_elecs, *it_walker_twfs, *it_walker_hamiltonians);
         ++it_walkers;
         ++it_walker_elecs;
         ++it_walker_twfs;
@@ -200,16 +201,13 @@ public:
   }
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
-  UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
+  RefVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
 
   void set_walker_offsets(std::vector<IndexType> walker_offsets) { walker_offsets_ = walker_offsets; }
-
-  // TODO: the fact this is needed is sad remove need for its existence.
-  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
   /** }@ */
 };
 

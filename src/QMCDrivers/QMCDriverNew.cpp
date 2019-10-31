@@ -339,8 +339,8 @@ void QMCDriverNew::makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVecto
     for(int i = 0; i < num_walkers_to_kill; ++i)
       population_.killLastWalker();
   }
-  for(UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
-    setNonLocalMoveHandler_(*ham);
+  for(QMCHamiltonian& ham : population_.get_hamiltonians())
+    setNonLocalMoveHandler_(ham);
 
   // setWalkerOffsets();
   // ////update the global number of walkers
