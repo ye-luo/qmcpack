@@ -182,9 +182,6 @@ public:
 
   int getBasisSetSize() { return Phi->getBasisSetSize(); }
 
-  //  bool setIdentity(bool useIdentity)
-  //  {return Phi->setIdentity(useIdentity); }
-
   void checkObject() { Phi->checkObject(); }
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) override

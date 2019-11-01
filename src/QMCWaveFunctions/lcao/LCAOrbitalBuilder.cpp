@@ -506,13 +506,11 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   //initialize the number of orbital by the basis set size
   int norb = spo.getBasisSetSize();
   std::string debugc("no");
-  double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb, "orbitals");
   aAttrib.add(norb, "size");
   aAttrib.add(debugc, "debug");
-  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   spo.setOrbitalSetSize(norb);
   xmlNodePtr occ_ptr   = NULL;
@@ -531,14 +529,13 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     }
     cur = cur->next;
   }
-  if (coeff_ptr == NULL)
-  {
-    app_log() << "   Using Identity for the LCOrbitalSet " << std::endl;
-    return spo.setIdentity(true);
-  }
   bool success = putOccupation(spo, occ_ptr);
   if (h5_path == "")
+  {
+    if (coeff_ptr == NULL)
+      myComm->barrier_and_abort("LCAOrbitalBuilder::loadMO molecular orbital coefficients are not provided!");
     success = putFromXML(spo, coeff_ptr);
+  }
   else
   {
     hdf_archive hin(myComm);
@@ -582,7 +579,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
 bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-  spo.Identity = true;
   int norbs    = 0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norbs, "size");

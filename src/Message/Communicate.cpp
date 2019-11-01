@@ -134,7 +134,7 @@ void Communicate::finalize()
 
 void Communicate::cleanupMessage(void*) {}
 
-void Communicate::abort() const { comm.abort(); }
+void Communicate::abort() const { comm.abort(1); }
 
 void Communicate::barrier() const { comm.barrier(); }
 
@@ -146,7 +146,7 @@ void Communicate::initializeAsNodeComm(const Communicate& parent) {}
 
 void Communicate::finalize() {}
 
-void Communicate::abort() const { std::abort(); }
+void Communicate::abort() const { std::exit(1); }
 
 void Communicate::barrier() const {}
 

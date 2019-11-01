@@ -43,8 +43,6 @@ public:
   /// a copy of the original C before orbital rotation is applied;
   ValueMatrix_t C_copy;
 
-  ///true if C is an identity matrix
-  bool Identity;
   ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
   vgl_type Temp;
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
