@@ -75,11 +75,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         {
           dr = sqrttau * deltaR[iat];
         }
-        if (!W.makeMoveAndCheck(iat, dr))
-        {
-          ++nReject;
-          continue;
-        }
+        W.makeMove(iat, dr);
         RealType logGf(1), logGb(1), prob;
         if (UseDrift)
         {
