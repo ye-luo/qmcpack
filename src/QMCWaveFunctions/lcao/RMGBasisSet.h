@@ -18,11 +18,26 @@ namespace qmcplusplus
 {
 /* A basis set for RMG localized orbitals
    *
-   * @tparam T : value type
+   * @tparam VALT : value type
    */
-template<typename T>
-struct RMGBasisSet
+template<typename VALT>
+class RMGBasisSet
 {
+private:
+  ///size of the basis set
+  int BasisSetSize;
+
+public:
+  RMGBasisSet<VALT>* makeClone() const
+  {
+    return new RMGBasisSet(*this);
+  }
+
+  inline int getBasisSetSize() const
+  {
+    return BasisSetSize;
+  }
+
   void checkInVariables(opt_variables_type& active)
   {
   }

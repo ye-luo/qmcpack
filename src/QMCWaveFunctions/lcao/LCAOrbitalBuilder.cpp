@@ -27,6 +27,7 @@
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSetRMG.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
+#include "QMCWaveFunctions/lcao/RMGBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)

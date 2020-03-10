@@ -54,7 +54,7 @@ struct SoaLocalizedBasisSet<RMGBasisSet<T>, ORBT> : public SoaBasisSetBase<ORBT>
    *
    * size of LOBasisSet = number  of unique centers
    */
-  aligned_vector<*> LOBasisSet;
+  aligned_vector<COT*> LOBasisSet;
 
   /** constructor
    * @param ions ionic system
@@ -98,6 +98,11 @@ struct SoaLocalizedBasisSet<RMGBasisSet<T>, ORBT> : public SoaBasisSetBase<ORBT>
     BasisSetSize = BasisOffset[NumCenters];
   }
 
+  void setPBCParams(const TinyVector<int, 3>& PBCImages,
+                    const TinyVector<double, 3> Sup_Twist,
+                    const std::vector<QMCTraits::ValueType>& phase_factor)
+  {
+  }
   /** compute VGL 
    * @param P quantum particleset
    * @param iat active particle
