@@ -67,8 +67,6 @@ public:
   bool put(xmlNodePtr cur);
   bool putH5(hdf_archive& hin);
 
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur) { return 0; }
-
   COT* createAOSet(xmlNodePtr cur);
   COT* createAOSetH5(hdf_archive& hin);
 

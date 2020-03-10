@@ -22,9 +22,10 @@
 #include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 #include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"
+#include "QMCWaveFunctions/lcao/RMGBasisSet.h"
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
+#include "QMCWaveFunctions/lcao/SoaLocalizedBasisSetRMG.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
-//#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
@@ -42,8 +43,8 @@ namespace qmcplusplus
    *
    * T radial function value type
    * ORBT orbital value type, can be complex
-   * ROT {0=numuerica;, 1=gto; 2=sto}
-   * SH {0=cartesian, 1=spherical}
+   * ROT radial function type {0 = numerical, 1 = GTO, 2 = STO}
+   * SH {0 = cartesian, 1 = spherical, 2 = grid }
    * If too confusing, inroduce enumeration.
    */
 template<typename T, typename ORBT, int ROT, int SH>
@@ -99,6 +100,15 @@ struct ao_traits<T, ORBT, 2, 1>
   using ao_type      = SoaAtomicBasisSet<radial_type, angular_type>;
   using basis_type   = SoaLocalizedBasisSet<ao_type, ORBT>;
 };
+
+/** specialization for RMG grid numerical AO*/
+template<typename T, typename ORBT>
+struct ao_traits<T, ORBT, 0, 2>
+{
+  using ao_type      = RMGBasisSet<T>;
+  using basis_type   = SoaLocalizedBasisSet<ao_type, ORBT>;
+};
+
 
 
 inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const char*)a, b); }
@@ -237,6 +247,10 @@ void LCAOrbitalBuilder::loadBasisSetFromH5()
     app_log() << "Reusing previously loaded BasisSet." << std::endl;
     return;
   }
+
+  // RMG entry, bypass everything else
+  myBasisSet = createBasisSetH5<0, 2>();
+  return;
 
   hdf_archive hin(myComm);
   int ylm = -1;
