@@ -10,12 +10,19 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "ResourceCollection.h"
-
+#include <iostream>
 namespace qmcplusplus
 {
 ResourceCollection::ResourceCollection(const std::string& name) : name_(name) {}
 
-void ResourceCollection::printResources() {}
+void ResourceCollection::printResources()
+{
+  std::cout << "Resource Collection: " << getName() << '\n';
+  for (auto& res : collection)
+  {
+    std::visit([](auto& resource) { std::cout << resource->getName() << '\n'; }, res);
+  }
+}
 
 size_t ResourceCollection::addResource(ResourceWrapper&& res)
 {
@@ -26,9 +33,6 @@ size_t ResourceCollection::addResource(ResourceWrapper&& res)
 
 ResourceWrapper ResourceCollection::lendResource(size_t id) { return std::move(collection[id]); }
 
-void ResourceCollection::takebackResource(size_t id, ResourceWrapper&& res)
-{
-  collection[id] = std::move(res);
-}
+void ResourceCollection::takebackResource(size_t id, ResourceWrapper&& res) { collection[id] = std::move(res); }
 
 } // namespace qmcplusplus

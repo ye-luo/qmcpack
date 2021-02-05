@@ -60,6 +60,7 @@ TEST_CASE("ResourceCollection", "[utilities]")
   wfc.createResource(res_collection);
   REQUIRE(wfc.getPtr() == nullptr);
 
+  res_collection.printResources();
   wfc.acquireResource(res_collection);
   REQUIRE(wfc.getPtr() != nullptr);
   REQUIRE(wfc.getPtr()->data.size() == 5);
