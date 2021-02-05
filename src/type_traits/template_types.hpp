@@ -16,6 +16,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <cassert>
 
 namespace qmcplusplus
 {

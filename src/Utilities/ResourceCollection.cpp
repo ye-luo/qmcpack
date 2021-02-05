@@ -17,16 +17,16 @@ ResourceCollection::ResourceCollection(const std::string& name) : name_(name) {}
 
 void ResourceCollection::printResources() {}
 
-size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res)
+size_t ResourceCollection::addResource(ResourceWrapper&& res)
 {
   size_t id = collection.size();
   collection.emplace_back(std::move(res));
   return id;
 }
 
-std::unique_ptr<Resource> ResourceCollection::lendResource(size_t id) { return std::move(collection[id]); }
+ResourceWrapper ResourceCollection::lendResource(size_t id) { return std::move(collection[id]); }
 
-void ResourceCollection::takebackResource(size_t id, std::unique_ptr<Resource>&& res)
+void ResourceCollection::takebackResource(size_t id, ResourceWrapper&& res)
 {
   collection[id] = std::move(res);
 }

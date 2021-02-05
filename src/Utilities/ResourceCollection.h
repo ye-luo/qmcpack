@@ -16,10 +16,17 @@
 #include <memory>
 #include <cstddef>
 #include <vector>
+#include <variant>
 #include "Resource.h"
+#include "type_traits/template_types.hpp"
+#include "tests/MemoryResource.h"
+#include "tests/TestResource2.h"
 
 namespace qmcplusplus
 {
+
+using ResourceWrapper = std::variant<UPtr<MemoryResource>,UPtr<TestResource2>>;
+
 class ResourceCollection
 {
 public:
@@ -27,13 +34,13 @@ public:
   const std::string& getName() const { return name_; }
   void printResources();
 
-  size_t addResource(std::unique_ptr<Resource>&& res);
-  std::unique_ptr<Resource> lendResource(size_t id);
-  void takebackResource(size_t i, std::unique_ptr<Resource>&& res);
+  size_t addResource(ResourceWrapper&& res);
+  ResourceWrapper lendResource(size_t id);
+  void takebackResource(size_t i, ResourceWrapper&& res);
 
 private:
   const std::string name_;
-  std::vector<std::unique_ptr<Resource>> collection;
+  std::vector<ResourceWrapper> collection;
 };
 } // namespace qmcplusplus
 #endif

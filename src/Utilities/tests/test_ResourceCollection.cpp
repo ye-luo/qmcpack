@@ -14,22 +14,13 @@
 
 namespace qmcplusplus
 {
-class MemoryResource : public Resource
-{
-public:
-  MemoryResource(const std::string& name) : Resource(name) {}
-
-  MemoryResource* makeClone() const override { return new MemoryResource(*this); }
-
-  std::vector<int> data;
-};
 
 TEST_CASE("Resource", "[utilities]")
 {
   auto mem_res = std::make_unique<MemoryResource>("test_res");
   mem_res->data.resize(5);
 
-  std::unique_ptr<MemoryResource> res_copy(mem_res->makeClone());
+  std::unique_ptr<MemoryResource> res_copy = std::make_unique<MemoryResource>(*mem_res);
   REQUIRE(res_copy->data.size() == 5);
 }
 
@@ -45,10 +36,7 @@ public:
 
   void acquireResource(ResourceCollection& collection)
   {
-    auto res_ptr = dynamic_cast<MemoryResource*>(collection.lendResource(resource_index).release());
-    if (!res_ptr)
-      throw std::runtime_error("WFCResourceConsumer::acquireResource dynamic_cast failed");
-    external_memory_handle.reset(res_ptr);
+    external_memory_handle = std::get<UPtr<MemoryResource>>(collection.lendResource(resource_index));
   }
 
   void releaseResource(ResourceCollection& collection)
@@ -78,6 +66,11 @@ TEST_CASE("ResourceCollection", "[utilities]")
 
   wfc.releaseResource(res_collection);
   REQUIRE(wfc.getPtr() == nullptr);
+
+  ResourceCollection res_Bad("bad");
+  auto test_resource_2 = std::make_unique<TestResource2>("test2_res");
+  auto bad_res_index = res_Bad.addResource(std::move(test_resource_2));
+  CHECK_THROWS(wfc.acquireResource(res_Bad));
 }
 
 } // namespace qmcplusplus
