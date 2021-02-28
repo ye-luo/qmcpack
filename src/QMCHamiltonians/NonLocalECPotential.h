@@ -61,14 +61,14 @@ public:
   /** set non local moves options
    * @param cur the xml input
    */
-  void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
+  void setNonLocalMoves(xmlNodePtr cur) { nonLocalOps.put(cur); }
 
   void setNonLocalMoves(const std::string& non_local_move_option,
                         const double tau,
                         const double alpha,
                         const double gamma)
   {
-    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
+    nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
   }
   /** make non local moves with particle-by-particle moves
    * @param P particle set
@@ -134,12 +134,12 @@ private:
   NeighborLists ElecNeighborIons;
   ///neighborlist of ions
   NeighborLists IonNeighborElecs;
-  ///use T-moves
-  int UseTMove;
   ///ture if an electron is affected by other electrons moved by T-moves
   std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
+  ///dummy nonLocalOps
+  NonLocalTOperator dummy_nonLocalOps;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)

@@ -21,13 +21,13 @@
 
 namespace qmcplusplus
 {
-NonLocalTOperator::NonLocalTOperator(size_t N) : Tau(0.01), Alpha(0.0), Gamma(0.0), Nelec(N) {}
+NonLocalTOperator::NonLocalTOperator(size_t N) : scheme_(Scheme::OFF), Nelec(N), Tau(0.01), Alpha(0.0), Gamma(0.0) {}
 
 /** process options related to TMoves
  * @return Tmove version
  *  Turns out this wants the NodePtr to the entire driver block.
  */
-int NonLocalTOperator::put(xmlNodePtr cur)
+void NonLocalTOperator::put(xmlNodePtr cur)
 {
   std::string use_tmove = "no";
   ParameterSet m_param;
@@ -42,26 +42,26 @@ int NonLocalTOperator::put(xmlNodePtr cur)
   bool success = m_param.put(cur);
   plusFactor   = Tau * Gamma;
   minusFactor  = -Tau * (1.0 - Alpha * (1.0 + Gamma));
-  int v_tmove  = TMOVE_OFF;
+  scheme_      = Scheme::OFF;
   std::ostringstream o;
   if (use_tmove == "no")
   {
-    v_tmove = TMOVE_OFF;
+    scheme_ = Scheme::OFF;
     o << "  Using Locality Approximation";
   }
   else if (use_tmove == "yes" || use_tmove == "v0")
   {
-    v_tmove = TMOVE_V0;
+    scheme_ = Scheme::V0;
     o << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
   }
   else if (use_tmove == "v1")
   {
-    v_tmove = TMOVE_V1;
+    scheme_ = Scheme::V1;
     o << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
   }
   else if (use_tmove == "v3")
   {
-    v_tmove = TMOVE_V3;
+    scheme_ = Scheme::V3;
     o << "  Using Non-local T-moves v3, an approximation to v1";
   }
   else
@@ -70,40 +70,39 @@ int NonLocalTOperator::put(xmlNodePtr cur)
   }
 #pragma omp master
   app_log() << o.str() << std::endl;
-  return v_tmove;
 }
 
-int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
-                                                         const double tau,
-                                                         const double alpha,
-                                                         const double gamma)
+void NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
+                                                          const double tau,
+                                                          const double alpha,
+                                                          const double gamma)
 {
   Tau         = tau;
   Alpha       = alpha;
   Gamma       = gamma;
   plusFactor  = Tau * Gamma;
   minusFactor = -Tau * (1.0 - Alpha * (1.0 + Gamma));
-  int v_tmove = TMOVE_OFF;
+  scheme_ = Scheme::OFF;
   std::ostringstream o;
 
   if (non_local_move_option == "no")
   {
-    v_tmove = TMOVE_OFF;
+    scheme_ = Scheme::OFF;
     o << "  Using Locality Approximation";
   }
   else if (non_local_move_option == "yes" || non_local_move_option == "v0")
   {
-    v_tmove = TMOVE_V0;
+    scheme_ = Scheme::V0;
     o << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
   }
   else if (non_local_move_option == "v1")
   {
-    v_tmove = TMOVE_V1;
+    scheme_ = Scheme::V1;
     o << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
   }
   else if (non_local_move_option == "v3")
   {
-    v_tmove = TMOVE_V3;
+    scheme_ = Scheme::V3;
     o << "  Using Non-local T-moves v3, an approximation to v1";
   }
   else
@@ -111,7 +110,6 @@ int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_
     APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
   }
   app_log() << o.str() << std::endl;
-  return v_tmove;
 }
 void NonLocalTOperator::reset() { Txy.clear(); }
 

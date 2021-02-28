@@ -66,8 +66,6 @@ private:
   ///hide initialization from the main function
   void resetRun();
   NonLocalTOperator NLop;
-  ///use T-moves
-  int UseTMove;
 
   NewTimer &ResizeTimer, &DriftDiffuseTimer, &BranchTimer, &HTimer;
 };

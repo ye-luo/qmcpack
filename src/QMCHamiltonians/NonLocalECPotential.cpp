@@ -43,8 +43,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       Peln(els),
       ElecNeighborIons(els),
       IonNeighborElecs(ions),
-      UseTMove(TMOVE_OFF),
-      nonLocalOps(els.getTotalNum())
+      nonLocalOps(els.getTotalNum()),
+      dummy_nonLocalOps(0)
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
@@ -107,7 +107,7 @@ void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
 {
-  if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
+  if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V0 || nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V3)
     evaluateImpl(P, true);
   else
     evaluateImpl(P, false);
@@ -117,7 +117,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
 void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
+  if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V0 || nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V3)
     mw_evaluateImpl(O_list, p_list, true);
   else
     mw_evaluateImpl(O_list, p_list, false);
@@ -434,7 +434,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 {
   int NonLocalMoveAccepted = 0;
   RandomGenerator_t& RandomGen(*myRNG);
-  if (UseTMove == TMOVE_V0)
+  if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V0)
   {
     const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen());
     //make a non-local move
@@ -452,7 +452,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       }
     }
   }
-  else if (UseTMove == TMOVE_V1)
+  else if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V1)
   {
     GradType grad_iat;
     //make a non-local move per particle
@@ -476,7 +476,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       }
     }
   }
-  else if (UseTMove == TMOVE_V3)
+  else if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V3)
   {
     elecTMAffected.assign(P.getTotalNum(), false);
     nonLocalOps.group_by_elec();

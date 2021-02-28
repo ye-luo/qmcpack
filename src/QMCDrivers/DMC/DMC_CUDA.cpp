@@ -142,7 +142,7 @@ bool DMCcuda::run()
       R2acc.resize(nw, 0.0);
       W.updateLists_GPU();
       ResizeTimer.stop();
-      if (UseTMove)
+      if (NLop.getScheme() != NonLocalTOperator::Scheme::OFF)
       {
         Txy.resize(nw);
         for (int iw = 0; iw < nw; iw++)
@@ -229,14 +229,14 @@ bool DMCcuda::run()
       DriftDiffuseTimer.stop();
       Psi.gradLapl(W, grad, lapl);
       HTimer.start();
-      if (UseTMove)
+      if (NLop.getScheme() != NonLocalTOperator::Scheme::OFF)
         H.evaluate(W, LocalEnergy, Txy);
       else
         H.evaluate(W, LocalEnergy);
       HTimer.stop();
       if (CurrentStep == 1)
         LocalEnergyOld = LocalEnergy;
-      if (UseTMove == TMOVE_V0)
+      if (NLop.getScheme() == NonLocalTOperator::Scheme::V0)
       {
         // Now, attempt nonlocal move
         accepted.clear();
@@ -266,7 +266,7 @@ bool DMCcuda::run()
           W.NLMove_GPU(accepted, accPos, iatList);
         }
       }
-      else if (UseTMove == TMOVE_V1 || UseTMove == TMOVE_V3)
+      else if (NLop.getScheme() == NonLocalTOperator::Scheme::V1 || NLop.getScheme() == NonLocalTOperator::Scheme::V3)
       {
         APP_ABORT("Tmove v1 and v3 have not been implemented on GPU.\n  please contact the developers if you need this "
                   "feature");
@@ -409,7 +409,7 @@ void DMCcuda::resetRun()
 bool DMCcuda::put(xmlNodePtr q)
 {
   //nothing to add
-  UseTMove = NLop.put(q);
+  NLop.put(q);
 
   BranchInterval = -1;
   ParameterSet p;
