@@ -21,10 +21,24 @@
 #ifndef QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 #define QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 
-#include "QMCHamiltonians/OperatorBase.h"
+#include "Configuration.h"
+#include <RandomGenerator.h>
 
 namespace qmcplusplus
 {
+class ParticleSet;
+class TrialWaveFunction;
+class NonLocalECPotential;
+
+struct NonLocalData : public QMCTraits
+{
+  IndexType PID;
+  RealType Weight;
+  PosType Delta;
+  inline NonLocalData() : PID(-1), Weight(1.0) {}
+  inline NonLocalData(IndexType id, RealType w, const PosType& d) : PID(id), Weight(w), Delta(d) {}
+};
+
 struct NonLocalTOperator
 {
   typedef NonLocalData::RealType RealType;
@@ -86,6 +100,8 @@ struct NonLocalTOperator
   void group_by_elec();
 
   Scheme getScheme() const { return scheme_; }
+
+  static int makeNonLocalMoves(NonLocalTOperator& nonLocalOps, ParticleSet& P, TrialWaveFunction& Psi, NonLocalECPotential& nlpp, RandomGenerator_t& myRNG);
 
 private:
   /// tmove selection

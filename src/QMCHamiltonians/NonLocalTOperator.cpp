@@ -18,6 +18,9 @@
  */
 #include "NonLocalTOperator.h"
 #include "OhmmsData/ParameterSet.h"
+#include "ParticleSet.h"
+#include "TrialWaveFunction.h"
+#include "NonLocalECPotential.h"
 
 namespace qmcplusplus
 {
@@ -150,6 +153,95 @@ void NonLocalTOperator::group_by_elec()
   {
     Txy_by_elec[Txy[i].PID].push_back(Txy[i]);
   }
+}
+
+int NonLocalTOperator::makeNonLocalMoves(NonLocalTOperator& nonLocalOps, ParticleSet& P, TrialWaveFunction& Psi, NonLocalECPotential& nlpp, RandomGenerator_t& myRNG)
+{
+  using GradType = TrialWaveFunction::GradType;
+
+  int NonLocalMoveAccepted = 0;
+  if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V0)
+  {
+    const NonLocalData* oneTMove = nonLocalOps.selectMove(myRNG());
+    //make a non-local move
+    if (oneTMove)
+    {
+      int iat = oneTMove->PID;
+      Psi.prepareGroup(P, P.getGroupID(iat));
+      if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+      {
+        GradType grad_iat;
+        Psi.calcRatioGrad(P, iat, grad_iat);
+        Psi.acceptMove(P, iat, true);
+        P.acceptMove(iat);
+        NonLocalMoveAccepted++;
+      }
+    }
+  }
+  else if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V1)
+  {
+    GradType grad_iat;
+    //make a non-local move per particle
+    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+    {
+      Psi.prepareGroup(P, ig);
+      for (int iat = P.first(ig); iat < P.last(ig); ++iat)
+      {
+        nlpp.computeOneElectronTxy(P, iat);
+        const NonLocalData* oneTMove = nonLocalOps.selectMove(myRNG());
+        if (oneTMove)
+        {
+          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+          {
+            Psi.calcRatioGrad(P, iat, grad_iat);
+            Psi.acceptMove(P, iat, true);
+            P.acceptMove(iat);
+            NonLocalMoveAccepted++;
+          }
+        }
+      }
+    }
+  }
+  else if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V3)
+  {
+    nlpp.markAllElecsUnaffected(P);
+    nonLocalOps.group_by_elec();
+    GradType grad_iat;
+    //make a non-local move per particle
+    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+    {
+      Psi.prepareGroup(P, ig);
+      for (int iat = P.first(ig); iat < P.last(ig); ++iat)
+      {
+        const NonLocalData* oneTMove;
+        if (nlpp.isElecAffected(iat))
+        {
+          // recompute Txy for the given electron effected by Tmoves
+          nlpp.computeOneElectronTxy(P, iat);
+          oneTMove = nonLocalOps.selectMove(myRNG());
+        }
+        else
+          oneTMove = nonLocalOps.selectMove(myRNG(), iat);
+        if (oneTMove)
+        {
+          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
+          {
+            Psi.calcRatioGrad(P, iat, grad_iat);
+            Psi.acceptMove(P, iat, true);
+            // mark all affected electrons
+            nlpp.markAffectedElecs(P, iat);
+            P.acceptMove(iat);
+            NonLocalMoveAccepted++;
+          }
+        }
+      }
+    }
+  }
+
+  if (NonLocalMoveAccepted > 0)
+    Psi.completeUpdates();
+
+  return NonLocalMoveAccepted;
 }
 
 } // namespace qmcplusplus

@@ -107,6 +107,26 @@ public:
 
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const override;
 
+  /** compute the T move transition probability for a given electron
+   * member variable nonLocalOps.Txy is updated
+   * @param P particle set
+   * @param ref_elec reference electron id
+   */
+  void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+
+  /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
+   * @param myTable electron ion distance table
+   * @param iel reference electron
+   * Note this function should be called before acceptMove for a Tmove
+   */
+  void markAffectedElecs(const ParticleSet& P, int iel);
+
+  /** mark all the electrons not affected by Tmoves
+   */
+  void markAllElecsUnaffected(const ParticleSet& P) { elecTMAffected.assign(P.getTotalNum(), false); }
+
+  bool isElecAffected(int iel) const { return elecTMAffected[iel]; }
+
 protected:
   ///random number generator
   RandomGenerator_t* myRNG;
@@ -165,20 +185,6 @@ private:
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               bool Tmove);
-
-  /** compute the T move transition probability for a given electron
-   * member variable nonLocalOps.Txy is updated
-   * @param P particle set
-   * @param ref_elec reference electron id
-   */
-  void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
-
-  /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
-   * @param myTable electron ion distance table
-   * @param iel reference electron
-   * Note this function should be called before acceptMove for a Tmove
-   */
-  void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };
 } // namespace qmcplusplus
 #endif
