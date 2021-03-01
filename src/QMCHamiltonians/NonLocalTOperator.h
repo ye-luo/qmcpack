@@ -101,7 +101,11 @@ struct NonLocalTOperator
 
   Scheme getScheme() const { return scheme_; }
 
-  static int makeNonLocalMoves(NonLocalTOperator& nonLocalOps, ParticleSet& P, TrialWaveFunction& Psi, NonLocalECPotential& nlpp, RandomGenerator_t& myRNG);
+  /** make non local moves with particle-by-particle moves
+   * @param P particle set
+   * @return the number of accepted moves
+   */
+  static int makeNonLocalMoves(ParticleSet& P, TrialWaveFunction& Psi, NonLocalECPotential& nlpp, RandomGenerator_t& myRNG);
 
 private:
   /// tmove selection

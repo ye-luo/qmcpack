@@ -21,6 +21,7 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/L2Potential.h"
 #include "Utilities/TimerManager.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA
@@ -897,6 +898,18 @@ void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)
     auxH[i]->resetTargetParticleSet(P);
 }
 
+void QMCHamiltonian::computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K)
+{
+  if (l2_ptr != nullptr)
+    l2_ptr->evaluateDK(P, iel, D, K);
+}
+
+void QMCHamiltonian::computeL2D(ParticleSet& P, int iel, TensorType& D)
+{
+  if (l2_ptr != nullptr)
+    l2_ptr->evaluateD(P, iel, D);
+}
+
 void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 {
   for (int i = 0; i < H.size(); i++)
@@ -905,44 +918,6 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
     auxH[i]->setRandomGenerator(rng);
   if (nlpp_ptr)
     nlpp_ptr->setRandomGenerator(rng);
-}
-
-void QMCHamiltonian::setNonLocalMoves(xmlNodePtr cur)
-{
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(cur);
-}
-
-void QMCHamiltonian::setNonLocalMoves(const std::string& non_local_move_option,
-                                      const double tau,
-                                      const double alpha,
-                                      const double gamma)
-{
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(non_local_move_option, tau, alpha, gamma);
-}
-
-int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
-{
-  if (nlpp_ptr == nullptr)
-    return 0;
-  else
-    return nlpp_ptr->makeNonLocalMovesPbyP(P);
-}
-
-
-std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                      const RefVectorWithLeader<ParticleSet>& p_list)
-{
-  auto& ham_leader = ham_list.getLeader();
-
-  std::vector<int> num_accepts(ham_list.size(), 0);
-  if (ham_list.getLeader().nlpp_ptr)
-  {
-    for (int iw = 0; iw < ham_list.size(); ++iw)
-      num_accepts[iw] = ham_list[iw].nlpp_ptr->makeNonLocalMovesPbyP(p_list[iw]);
-  }
-  return num_accepts;
 }
 
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

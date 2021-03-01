@@ -155,9 +155,10 @@ void NonLocalTOperator::group_by_elec()
   }
 }
 
-int NonLocalTOperator::makeNonLocalMoves(NonLocalTOperator& nonLocalOps, ParticleSet& P, TrialWaveFunction& Psi, NonLocalECPotential& nlpp, RandomGenerator_t& myRNG)
+int NonLocalTOperator::makeNonLocalMoves(ParticleSet& P, TrialWaveFunction& Psi, NonLocalECPotential& nlpp, RandomGenerator_t& myRNG)
 {
   using GradType = TrialWaveFunction::GradType;
+  NonLocalTOperator& nonLocalOps = nlpp.getNonLocalOps();
 
   int NonLocalMoveAccepted = 0;
   if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V0)

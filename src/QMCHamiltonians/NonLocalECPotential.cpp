@@ -43,8 +43,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       Peln(els),
       ElecNeighborIons(els),
       IonNeighborElecs(ions),
-      nonLocalOps(els.getTotalNum()),
-      dummy_nonLocalOps(0)
+      nonLocalOps(els.getTotalNum())
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
@@ -428,94 +427,6 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
     PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], use_DLA);
     PP[iat]->contributeTxy(ref_elec, Txy);
   }
-}
-
-int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
-{
-  int NonLocalMoveAccepted = 0;
-  RandomGenerator_t& RandomGen(*myRNG);
-  if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V0)
-  {
-    const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen());
-    //make a non-local move
-    if (oneTMove)
-    {
-      int iat = oneTMove->PID;
-      Psi.prepareGroup(P, P.getGroupID(iat));
-      if (P.makeMoveAndCheck(iat, oneTMove->Delta))
-      {
-        GradType grad_iat;
-        Psi.calcRatioGrad(P, iat, grad_iat);
-        Psi.acceptMove(P, iat, true);
-        P.acceptMove(iat);
-        NonLocalMoveAccepted++;
-      }
-    }
-  }
-  else if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V1)
-  {
-    GradType grad_iat;
-    //make a non-local move per particle
-    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
-    {
-      Psi.prepareGroup(P, ig);
-      for (int iat = P.first(ig); iat < P.last(ig); ++iat)
-      {
-        computeOneElectronTxy(P, iat);
-        const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen());
-        if (oneTMove)
-        {
-          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
-          {
-            Psi.calcRatioGrad(P, iat, grad_iat);
-            Psi.acceptMove(P, iat, true);
-            P.acceptMove(iat);
-            NonLocalMoveAccepted++;
-          }
-        }
-      }
-    }
-  }
-  else if (nonLocalOps.getScheme() == NonLocalTOperator::Scheme::V3)
-  {
-    elecTMAffected.assign(P.getTotalNum(), false);
-    nonLocalOps.group_by_elec();
-    GradType grad_iat;
-    //make a non-local move per particle
-    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
-    {
-      Psi.prepareGroup(P, ig);
-      for (int iat = P.first(ig); iat < P.last(ig); ++iat)
-      {
-        const NonLocalData* oneTMove;
-        if (elecTMAffected[iat])
-        {
-          // recompute Txy for the given electron effected by Tmoves
-          computeOneElectronTxy(P, iat);
-          oneTMove = nonLocalOps.selectMove(RandomGen());
-        }
-        else
-          oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
-        if (oneTMove)
-        {
-          if (P.makeMoveAndCheck(iat, oneTMove->Delta))
-          {
-            Psi.calcRatioGrad(P, iat, grad_iat);
-            Psi.acceptMove(P, iat, true);
-            // mark all affected electrons
-            markAffectedElecs(P, iat);
-            P.acceptMove(iat);
-            NonLocalMoveAccepted++;
-          }
-        }
-      }
-    }
-  }
-
-  if (NonLocalMoveAccepted > 0)
-    Psi.completeUpdates();
-
-  return NonLocalMoveAccepted;
 }
 
 void NonLocalECPotential::markAffectedElecs(const ParticleSet& P, int iel)

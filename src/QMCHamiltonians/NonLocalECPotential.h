@@ -58,24 +58,6 @@ public:
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms) override;
 
-  /** set non local moves options
-   * @param cur the xml input
-   */
-  void setNonLocalMoves(xmlNodePtr cur) { nonLocalOps.put(cur); }
-
-  void setNonLocalMoves(const std::string& non_local_move_option,
-                        const double tau,
-                        const double alpha,
-                        const double gamma)
-  {
-    nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
-  }
-  /** make non local moves with particle-by-particle moves
-   * @param P particle set
-   * @return the number of accepted moves
-   */
-  int makeNonLocalMovesPbyP(ParticleSet& P);
-
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
                                        const std::vector<ValueType>& dlogpsi,
@@ -127,6 +109,8 @@ public:
 
   bool isElecAffected(int iel) const { return elecTMAffected[iel]; }
 
+  NonLocalTOperator& getNonLocalOps() { return nonLocalOps; }
+
 protected:
   ///random number generator
   RandomGenerator_t* myRNG;
@@ -158,8 +142,6 @@ private:
   std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
-  ///dummy nonLocalOps
-  NonLocalTOperator dummy_nonLocalOps;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)

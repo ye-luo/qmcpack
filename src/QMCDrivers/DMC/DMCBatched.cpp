@@ -26,6 +26,7 @@
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
 #include "MemoryUsage.h"
+#include "NonLocalECPotential.h"
 
 namespace qmcplusplus
 {
@@ -56,8 +57,12 @@ DMCBatched::~DMCBatched() = default;
 
 void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
 {
-  golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
-                                      dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+  if (golden_hamiltonian.getNLPPptr())
+  {
+    auto& nonLocalOps = golden_hamiltonian.getNLPPptr()->getNonLocalOps();
+    nonLocalOps.thingsThatShouldBeInMyConstructor(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
+                                                  dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
+  }
 }
 
 void DMCBatched::advanceWalkers(const StateForThread& sft,
@@ -291,7 +296,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
       CrowdResourceLock pbyp_lock(crowd, iw);
-      walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
+      if (walker_hamiltonians[iw].getNLPPptr())
+        walker_non_local_moves_accepted[iw] =
+            NonLocalTOperator::makeNonLocalMoves(walker_elecs[iw], walker_twfs[iw],
+                                                 *walker_hamiltonians[iw].getNLPPptr(), step_context.get_random_gen());
 
       if (walker_non_local_moves_accepted[iw] > 0)
       {

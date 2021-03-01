@@ -21,6 +21,8 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/OpenMP.h"
+#include <NonLocalECPotential.h>
+#include <NonLocalTOperator.h>
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -94,7 +96,8 @@ void QMCUpdateBase::setDefaults()
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
 {
-  H.setNonLocalMoves(cur);
+  if (H.getNLPPptr())
+    H.getNLPPptr()->getNonLocalOps().put(cur);
   bool s = myParams.put(cur);
   return s;
 }

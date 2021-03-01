@@ -19,8 +19,6 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
-#include "QMCHamiltonians/NonLocalECPotential.h"
-#include "QMCHamiltonians/L2Potential.h"
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
@@ -34,6 +32,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 class HamiltonianFactory;
 class NonLocalECPotential;
+struct L2Potential;
 
 /**  Collection of Local Energy Operators
  *
@@ -316,21 +315,6 @@ public:
                                      ParticleSet::ParticlePos_t& hf_terms,
                                      ParticleSet::ParticlePos_t& pulay_terms,
                                      ParticleSet::ParticlePos_t& wf_grad);
-  /** set non local moves options
-   * @param cur the xml input
-   */
-  void setNonLocalMoves(xmlNodePtr cur);
-
-  void setNonLocalMoves(const std::string& non_local_move_option,
-                        const double tau,
-                        const double alpha,
-                        const double gamma);
-
-  /** make non local moves
-   * @param P particle set
-   * @return the number of accepted moves
-   */
-  int makeNonLocalMoves(ParticleSet& P);
 
   /** determine if L2 potential is present
    */
@@ -341,24 +325,14 @@ public:
     * @param D diffusion matrix (outputted)
     * @param K drift modification vector (outputted)
     */
-  void computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K)
-  {
-    if (l2_ptr != nullptr)
-      l2_ptr->evaluateDK(P, iel, D, K);
-  }
+  void computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K);
 
   /** compute D matrix for L2 potential propagator
     * @param r single particle coordinate
     * @param D diffusion matrix (outputted)
     */
-  void computeL2D(ParticleSet& P, int iel, TensorType& D)
-  {
-    if (l2_ptr != nullptr)
-      l2_ptr->evaluateD(P, iel, D);
-  }
+  void computeL2D(ParticleSet& P, int iel, TensorType& D);
 
-  static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                               const RefVectorWithLeader<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -379,6 +353,8 @@ public:
   bool get(std::ostream& os) const;
 
   RealType get_LocalEnergy() const { return LocalEnergy; }
+
+  NonLocalECPotential* getNLPPptr() const { return nlpp_ptr; }
 
   void setRandomGenerator(RandomGenerator_t* rng);
 

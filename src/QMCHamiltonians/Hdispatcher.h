@@ -35,9 +35,6 @@ public:
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
       const RefVectorWithLeader<ParticleSet>& p_list) const;
 
-  std::vector<int> flex_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                          const RefVectorWithLeader<ParticleSet>& p_list) const;
-
 private:
   bool use_batch_;
 };
