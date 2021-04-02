@@ -181,10 +181,17 @@ public:
                                                                             Matrix<TMAT>& invMat,
                                                                             std::complex<TREAL>& LogDet)
   {
+    //#pragma omp taskwait
     const int n   = invMat.rows();
     const int lda = invMat.cols();
     simd::transpose(amat.data(), n, amat.cols(), invMat.data(), n, lda);
+    std::cout << "invmat before " << invMat.rows() << " " << invMat.cols() << " addr " << invMat.data() << std::endl
+              << "[0][0] " <<  invMat[0][0] << " [3][3] " <<  invMat[3][3] << std::endl;
+    std::cout << "amat " << amat.rows() << " " << amat.cols() << std::endl;
+    std::cout << "invmat after  " << invMat.rows() << " " << invMat.cols() << " addr " << invMat.data() << std::endl
+              << "[0][0] " <<  invMat[0][0] << " [3][3] " <<  invMat[3][3] << std::endl;
     computeInvertAndLog(invMat.data(), n, lda, LogDet);
+    std::cout << "LogDet " << LogDet << std::endl;
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log

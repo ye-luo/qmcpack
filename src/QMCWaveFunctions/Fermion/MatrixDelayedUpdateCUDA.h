@@ -432,9 +432,11 @@ public:
       Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
       engine_leader.detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
       T* Ainv_ptr = Ainv.data();
+      std::cout << "Ainv addr " << Ainv_ptr << " size(bytes) " << Ainv.size()*sizeof(T) << std::endl;
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
+    std::cout << "EEEEEEEEEEEEEEEEEEEEEEE" << std::endl;
   }
 
   // prepare invRow and compute the old gradients.

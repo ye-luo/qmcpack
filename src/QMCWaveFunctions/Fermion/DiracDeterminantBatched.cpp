@@ -353,7 +353,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
         auto& my_psiM_vgl  = det.psiM_vgl;
         auto* psiM_vgl_ptr = my_psiM_vgl.data();
         // transfer device to host, total size 4, g(3) + l(1)
-        PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
+        PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
       }
       PRAGMA_OFFLOAD("omp taskwait")
     }
@@ -898,15 +898,20 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   { // transfer dpsiM, d2psiM, psiMinv to device
     ScopedTimer d2h(H2DTimer);
 
+    PRAGMA_OFFLOAD("omp taskwait")
+    std::cout << "omp_get_level " << omp_get_level() << std::endl;
+    std::cout << "omp_get_active_level " << omp_get_active_level() << std::endl;
     RefVector<const ValueMatrix_t> const_psiM_temp_list;
     for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
     {
       auto& det          = wfc_filtered_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
       auto* psiM_vgl_ptr = det.psiM_vgl.data();
       size_t stride      = wfc_leader.psiM_vgl.capacity();
+      std::cout << "stride " << stride << " addr " << psiM_vgl_ptr + stride << " size(bytes) " << stride*4*sizeof(RealType) << std::endl;
       PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
       const_psiM_temp_list.push_back(det.psiM_temp);
     }
+    //PRAGMA_OFFLOAD("omp taskwait")
     mw_invertPsiM(wfc_filtered_list, const_psiM_temp_list);
     PRAGMA_OFFLOAD("omp taskwait")
   }
