@@ -37,11 +37,10 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
   const size_t num    = psi.extent(1);
   const size_t npairs = pairs.size();
   //MatrixOperators::product_ABt(psiinv,psi,dotProducts);
-  const std::pair<int, int>* restrict p = pairs.data();
-  for (size_t i = 0; i < npairs; ++i)
+  for (const auto& pair : pairs)
   {
-    const int I       = p[i].first;
-    const int J       = p[i].second;
+    const int I       = pair.first;
+    const int J       = pair.second;
     dotProducts(I, J) = simd::dot(psiinv[I], psi[J], num);
   }
   buildTableTimer.stop();

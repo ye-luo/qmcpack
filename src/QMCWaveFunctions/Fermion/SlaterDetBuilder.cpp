@@ -1406,7 +1406,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 
     app_debug() << "det[" << ni << "] ";
     for (int grp = 0; grp < nGroups; grp++)
-      app_debug() << "g[" << grp << "] = " << MyCIs[grp] << std::endl;
+      app_debug() << " g[" << grp << "] = " << MyCIs[grp];
     app_debug() << std::endl;
 
     coeff.push_back(CIcoeff[ni]);
