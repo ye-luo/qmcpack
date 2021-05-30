@@ -1392,26 +1392,23 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     if (std::abs(CIcoeff[ni]) < cutoff)
       continue;
 
-    int j = 0;
-    for (int k = 0; k < N_int; k++)
+    for (int grp = 0; grp < nGroups; grp++)
     {
-      std::vector<std::bitset<bit_kind>> a2s(nGroups);
-      for (int grp = 0; grp < nGroups; grp++)
+      int j = 0;
+      for (int k = 0; k < N_int; k++)
       {
-        int64_t a = temps[grp][ni][k];
-        a2s[grp]  = a;
-      }
-
-      for (int i = 0; i < bit_kind; i++)
-      {
-        if (j < nstates)
-        {
-          for (int grp = 0; grp < nGroups; grp++)
-            MyCIs[grp][j] = a2s[grp][i] ? '1' : '0';
-          j++;
-        }
+        std::bitset<bit_kind> a2s(temps[grp][ni][k]);
+        for (int i = 0; i < bit_kind; i++)
+          if (j < nstates)
+            MyCIs[grp][j++] = a2s[i] ? '1' : '0';
       }
     }
+
+    app_debug() << "det[" << ni << "] ";
+    for (int grp = 0; grp < nGroups; grp++)
+      app_debug() << "g[" << grp << "] = " << MyCIs[grp] << std::endl;
+    app_debug() << std::endl;
+
     coeff.push_back(CIcoeff[ni]);
     std::ostringstream h5tag;
     h5tag << "CIcoeff_" << ni;
