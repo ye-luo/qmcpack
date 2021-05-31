@@ -96,7 +96,11 @@ public:
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node);
   ///helper function to buildOptVariables
-  int build_occ_vec(const std::vector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
+  int build_occ_vec(const std::vector<int>& data,
+                    const std::vector<int>& virtual_indices,
+                    const size_t nel,
+                    const size_t nmo,
+                    std::vector<int>& occ_vec);
 
   void resetParameters(const opt_variables_type& active) { Phi->resetParameters(active); }
 
@@ -224,7 +228,8 @@ public:
   void createDetData(const ci_configuration2& ref,
                      std::vector<int>& data,
                      std::vector<std::pair<int, int>>& pairs,
-                     std::vector<RealType>& sign);
+                     std::vector<int>& virtual_orbital_indices,
+                     std::vector<RealType>& sign) const;
 
   template<typename ITER>
   inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, ITER it)
@@ -416,8 +421,8 @@ public:
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
 
 private:
-  ///reset the size: with the number of particles
-  void resize(int nel);
+  ///resize internal storage
+  void resize();
 
   ///a set of single-particle orbitals used to fill in the  values of the matrix
   const std::unique_ptr<SPOSet> Phi;
@@ -439,8 +444,9 @@ private:
   const bool is_spinor_;
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
-  /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix_t psiM, TpsiM;
+  ValueMatrix_t psiM;
+  /// TpsiM(i,j) \f$= psiM(j,i) \f$, j only goes through active unoccupied orbitals
+  ValueMatrix_t TpsiM;
   /// inverse Dirac determinant matrix of the reference det
   ValueMatrix_t psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
@@ -498,6 +504,8 @@ private:
    */
   std::shared_ptr<std::vector<int>> detData;
   std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
+  /// list of virtual (active unoccupied) orbital indices
+  std::shared_ptr<std::vector<int>> virtual_orbital_indices_;
   std::shared_ptr<std::vector<RealType>> DetSigns;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };

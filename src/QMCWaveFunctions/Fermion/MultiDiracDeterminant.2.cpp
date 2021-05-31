@@ -193,6 +193,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
 {
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
+  const auto& virtual_indices       = *det_leader.virtual_orbital_indices_;
   det_leader.RatioTimer.start();
 
   det_leader.UpdateMode = ORB_PBYP_RATIO;
@@ -240,14 +241,14 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     det.curRatio                                     = DetRatioByColumn(det.psiMinv_temp, det.psiV_temp, WorkingIndex);
     det.new_ratios_to_ref_[det.ReferenceDeterminant] = ValueType(1);
     InverseUpdateByColumn(det.psiMinv_temp, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, det.curRatio);
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      det.TpsiM(i, WorkingIndex) = det.psiV[i];
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      det.TpsiM(i, WorkingIndex) = det.psiV[virtual_indices[i]];
     det.ExtraStuffTimer.stop();
     det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, det.new_ratios_to_ref_, det.psiMinv_temp,
                                            det.TpsiM, det.dotProducts, *det.detData, *det.uniquePairs, *det.DetSigns);
 
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      det.TpsiM(i, WorkingIndex) = det.psiM(WorkingIndex, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      det.TpsiM(i, WorkingIndex) = det.psiM(WorkingIndex, virtual_indices[i]);
   }
   det_leader.RatioTimer.stop();
 }
@@ -278,14 +279,15 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
   curRatio                                 = ratio_old_ref_det;
   new_ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, ratio_old_ref_det);
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiV[i];
+  const auto& virtual_indices = *virtual_orbital_indices_;
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiV[virtual_indices[i]];
   ExtraStuffTimer.stop();
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM, dotProducts,
                                      *detData, *uniquePairs, *DetSigns);
   // check comment above
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, virtual_indices[i]);
   RatioTimer.stop();
 }
 
@@ -315,8 +317,9 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
   new_grads(ReferenceDeterminant, WorkingIndex) = ratioGradRef / curRatio;
   new_ratios_to_ref_[ReferenceDeterminant]      = 1.0;
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiV[i];
+  const auto& virtual_indices = *virtual_orbital_indices_;
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiV[virtual_indices[i]];
   ExtraStuffTimer.stop();
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM, dotProducts,
                                      *detData, *uniquePairs, *DetSigns);
@@ -329,15 +332,15 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
     for (size_t i = 0; i < NumPtcls; i++)
       psiV_temp[i] = dpsiV[*(it++)][idim];
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioGradRef[idim]);
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, WorkingIndex) = dpsiV[i][idim];
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, WorkingIndex) = dpsiV[virtual_indices[i]][idim];
     ExtraStuffTimer.stop();
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_grads, dpsiMinv, TpsiM, dotProducts,
                                        *detData, *uniquePairs, *DetSigns, idim);
   }
   // check comment above
-  for (int i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  for (int i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, virtual_indices[i]);
 }
 
 void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat)
@@ -369,8 +372,9 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   new_spingrads(ReferenceDeterminant, WorkingIndex) = ratioSpinGradRef / curRatio;
   new_ratios_to_ref_[ReferenceDeterminant]          = 1.0;
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiV[i];
+  const auto& virtual_indices = *virtual_orbital_indices_;
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiV[virtual_indices[i]];
   ExtraStuffTimer.stop();
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM, dotProducts,
                                      *detData, *uniquePairs, *DetSigns);
@@ -383,8 +387,8 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
     for (size_t i = 0; i < NumPtcls; i++)
       psiV_temp[i] = dpsiV[*(it++)][idim];
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioGradRef[idim]);
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, WorkingIndex) = dpsiV[i][idim];
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, WorkingIndex) = dpsiV[virtual_indices[i]][idim];
     ExtraStuffTimer.stop();
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_grads, dpsiMinv, TpsiM, dotProducts,
                                        *detData, *uniquePairs, *DetSigns, idim);
@@ -396,15 +400,15 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   for (size_t i = 0; i < NumPtcls; i++)
     psiV_temp[i] = dspin_psiV[*(it++)];
   InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioSpinGradRef);
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = dspin_psiV[i];
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = dspin_psiV[virtual_indices[i]];
   ExtraStuffTimer.stop();
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_spingrads, dpsiMinv, TpsiM, dotProducts,
                                      *detData, *uniquePairs, *DetSigns);
 
   // check comment above
-  for (int i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  for (int i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, virtual_indices[i]);
 }
 
 void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
@@ -414,6 +418,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 {
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
+  const auto& virtual_indices       = *det_leader.virtual_orbital_indices_;
 
   det_leader.UpdateMode = ORB_PBYP_PARTIAL;
   //det_leader.evalOrb1Timer.start();
@@ -443,8 +448,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     det.new_grads(det.ReferenceDeterminant, WorkingIndex) = ratioGradRef / det.curRatio;
     det.new_ratios_to_ref_[det.ReferenceDeterminant]      = ValueType(1);
     InverseUpdateByColumn(det.psiMinv_temp, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, det.curRatio);
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      det.TpsiM(i, WorkingIndex) = det.psiV[i];
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      det.TpsiM(i, WorkingIndex) = det.psiV[virtual_indices[i]];
     det.ExtraStuffTimer.stop();
     det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, det.new_ratios_to_ref_, det.psiMinv_temp,
                                            det.TpsiM, det.dotProducts, *det.detData, *det.uniquePairs, *det.DetSigns);
@@ -456,15 +461,15 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
       for (size_t i = 0; i < det_leader.NumPtcls; i++)
         det.psiV_temp[i] = det.dpsiV[*(it++)][idim];
       InverseUpdateByColumn(det.dpsiMinv, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, ratioGradRef[idim]);
-      for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-        det.TpsiM(i, WorkingIndex) = det.dpsiV[i][idim];
+      for (size_t i = 0; i < virtual_indices.size(); i++)
+        det.TpsiM(i, WorkingIndex) = det.dpsiV[virtual_indices[i]][idim];
       det.ExtraStuffTimer.stop();
       det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, WorkingIndex, det.new_grads, det.dpsiMinv,
                                              det.TpsiM, det.dotProducts, *det.detData, *det.uniquePairs, *det.DetSigns,
                                              idim);
     }
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      det.TpsiM(i, WorkingIndex) = det.psiM(WorkingIndex, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      det.TpsiM(i, WorkingIndex) = det.psiM(WorkingIndex, virtual_indices[i]);
   }
 }
 
@@ -473,7 +478,8 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
 
-  const auto& confgList = *ciConfigList;
+  const auto& confgList       = *ciConfigList;
+  const auto& virtual_indices = *virtual_orbital_indices_;
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
     //dpsiMinv = psiMinv_temp;
@@ -488,14 +494,14 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
     }
     grads(ReferenceDeterminant, WorkingIndex)[idim] = ratioG;
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioG);
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, WorkingIndex) = dpsiM(WorkingIndex, i)[idim];
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, WorkingIndex) = dpsiM(WorkingIndex, virtual_indices[i])[idim];
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, grads, dpsiMinv, TpsiM, dotProducts,
                                        *detData, *uniquePairs, *DetSigns, idim);
   }
   // check comment above
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, virtual_indices[i]);
 }
 
 void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
@@ -504,7 +510,8 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
 
-  const auto& confgList = *ciConfigList;
+  const auto& confgList       = *ciConfigList;
+  const auto& virtual_indices = *virtual_orbital_indices_;
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
     //dpsiMinv = psiMinv_temp;
@@ -519,8 +526,8 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
     }
     grads(ReferenceDeterminant, WorkingIndex)[idim] = ratioG;
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioG);
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, WorkingIndex) = dpsiM(WorkingIndex, i)[idim];
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, WorkingIndex) = dpsiM(WorkingIndex, virtual_indices[i])[idim];
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, grads, dpsiMinv, TpsiM, dotProducts,
                                        *detData, *uniquePairs, *DetSigns, idim);
   }
@@ -537,14 +544,14 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
   }
   spingrads(ReferenceDeterminant, WorkingIndex) = ratioSG;
   InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioSG);
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = dspin_psiM(WorkingIndex, i);
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = dspin_psiM(WorkingIndex, virtual_indices[i]);
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, spingrads, dpsiMinv, TpsiM, dotProducts,
                                      *detData, *uniquePairs, *DetSigns);
 
   // check comment above
-  for (size_t i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  for (size_t i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, virtual_indices[i]);
 }
 
 void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
@@ -553,6 +560,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
 {
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
+  const auto& virtual_indices       = *det_leader.virtual_orbital_indices_;
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -574,14 +582,14 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
       }
       det.grads(det.ReferenceDeterminant, WorkingIndex)[idim] = ratioG;
       InverseUpdateByColumn(det.dpsiMinv, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, ratioG);
-      for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-        det.TpsiM(i, WorkingIndex) = det.dpsiM(WorkingIndex, i)[idim];
+      for (size_t i = 0; i < virtual_indices.size(); i++)
+        det.TpsiM(i, WorkingIndex) = det.dpsiM(WorkingIndex, virtual_indices[i])[idim];
       det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, WorkingIndex, det.grads, det.dpsiMinv, det.TpsiM,
                                              det.dotProducts, *det.detData, *det.uniquePairs, *det.DetSigns, idim);
     }
 
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      det.TpsiM(i, WorkingIndex) = det.psiM(WorkingIndex, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      det.TpsiM(i, WorkingIndex) = det.psiM(WorkingIndex, virtual_indices[i]);
   }
 }
 

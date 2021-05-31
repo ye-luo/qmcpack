@@ -35,16 +35,22 @@ void MultiDiracDeterminant::set(int first, int nel, int ref_det_id)
   assert(ciConfigList);
   assert(ciConfigList->size() > 0);
 
+  if (nel <= 0)
+    throw std::runtime_error("MultiDiracDeterminant::resize arguments <=0.");
+
   FirstIndex           = first;
   ReferenceDeterminant = ref_det_id;
-  resize(nel);
-  createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
+  NumPtcls             = nel;
+  LastIndex            = FirstIndex + nel;
+  createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *virtual_orbital_indices_, *DetSigns);
+  resize();
 }
 
 void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
                                           std::vector<int>& data,
                                           std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign)
+                                          std::vector<int>& virtual_orbital_indices,
+                                          std::vector<RealType>& sign) const
 {
   const auto& confgList = *ciConfigList;
 
@@ -52,9 +58,11 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
   std::vector<size_t> pos(NumPtcls);
   std::vector<size_t> ocp(NumPtcls);
   std::vector<size_t> uno(NumPtcls);
+  std::vector<size_t> uno_index(NumPtcls);
   data.clear();
   sign.resize(nci);
   pairs.clear();
+  virtual_orbital_indices.clear();
   for (size_t i = 0; i < nci; i++)
   {
     sign[i] = ref.calculateExcitations(confgList[i], nex, pos, ocp, uno);
@@ -62,32 +70,50 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
     for (int k = 0; k < nex; k++)
       data.push_back(pos[k]);
     for (int k = 0; k < nex; k++)
-      data.push_back(uno[k]);
+    {
+      const auto p_virtual = std::find(virtual_orbital_indices.begin(), virtual_orbital_indices.end(), uno[k]);
+      if (p_virtual == virtual_orbital_indices.end())
+      {
+        data.push_back(virtual_orbital_indices.size());
+        virtual_orbital_indices.push_back(uno[k]);
+      }
+      else
+        data.push_back(std::distance(virtual_orbital_indices.begin(), p_virtual));
+      uno_index[k] = data.back();
+    }
     for (int k = 0; k < nex; k++)
       data.push_back(ocp[k]);
+
+    app_debug() << "det " << i << std::endl;
+    for (int k = 0; k < nex; k++)
+      app_debug() << "    pos,uno,ocp " << pos[k] << " " << uno[k] << " " << ocp[k] << std::endl;
     // determine unique pairs, to avoid redundant calculation of matrix elements
     // if storing the entire MOxMO matrix is too much, then make an array and a mapping to it.
     // is there an easier way??
     for (int k1 = 0; k1 < nex; k1++)
       for (int k2 = 0; k2 < nex; k2++)
       {
-        //           std::pair<int,int> temp(ocp[k1],uno[k2]);
-        std::pair<int, int> temp(pos[k1], uno[k2]);
+        std::pair<int, int> temp(pos[k1], uno_index[k2]);
         if (find(pairs.begin(), pairs.end(), temp) == pairs.end()) //pair is new
           pairs.push_back(temp);
       }
   }
-  app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
-  /*
-       std::cout <<"ref: " <<ref << std::endl;
-       std::cout <<"list: " << std::endl;
-       for(int i=0; i<confgList.size(); i++)
-         std::cout <<confgList[i] << std::endl;
 
-       std::cout <<"pairs: " << std::endl;
-       for(int i=0; i<pairs.size(); i++)
-         std::cout <<pairs[i].first <<"   " <<pairs[i].second << std::endl;
-  */
+  app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
+
+  // print info for debugging
+  app_debug() << "ref: " << ref << std::endl << "list: " << std::endl;
+  for (int i = 0; i < confgList.size(); i++)
+    app_debug() << confgList[i] << std::endl;
+
+  app_debug() << "virtual (active unoccupied) orbitals:" << std::endl;
+  for (int virtual_index : virtual_orbital_indices)
+    app_debug() << " " << virtual_index;
+  app_debug() << std::endl;
+
+  app_debug() << "pairs: " << std::endl;
+  for (int i = 0; i < pairs.size(); i++)
+    app_debug() << pairs[i].first << "   " << pairs[i].second << std::endl;
 }
 
 //erase
@@ -114,9 +140,10 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     it++;
   }
 
+  const auto& virtual_indices = *virtual_orbital_indices_;
   for (size_t i = 0; i < NumPtcls; i++)
-    for (size_t j = 0; j < NumOrbitals; j++)
-      TpsiM(j, i) = psiM(i, j);
+    for (size_t j = 0; j < virtual_indices.size(); j++)
+      TpsiM(j, i) = psiM(i, virtual_indices[j]);
 
   std::complex<RealType> logValueRef;
   InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
@@ -147,8 +174,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
         psiV_temp[i] = dpsiM(iat, *(it++))[idim];
       InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, gradRatio[idim]);
       //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
-      for (size_t i = 0; i < NumOrbitals; i++)
-        TpsiM(i, iat) = dpsiM(iat, i)[idim];
+      for (size_t i = 0; i < virtual_indices.size(); i++)
+        TpsiM(i, iat) = dpsiM(iat, virtual_indices[i])[idim];
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, grads, dpsiMinv, TpsiM, dotProducts, *detData,
                                          *uniquePairs, *DetSigns, idim);
     }
@@ -158,13 +185,13 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       psiV_temp[i] = d2psiM(iat, *(it++));
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, ratioLapl);
     //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, iat) = d2psiM(iat, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, iat) = d2psiM(iat, virtual_indices[i]);
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
                                        *uniquePairs, *DetSigns);
     // restore matrix
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, iat) = psiM(iat, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, iat) = psiM(iat, virtual_indices[i]);
   }
 
   psiMinv_temp = psiMinv;
@@ -189,11 +216,11 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       psiMinv(j, i) = psiM(j, *it);
     it++;
   }
+
+  const auto& virtual_indices = *virtual_orbital_indices_;
   for (size_t i = 0; i < NumPtcls; i++)
-  {
-    for (size_t j = 0; j < NumOrbitals; j++)
-      TpsiM(j, i) = psiM(i, j);
-  }
+    for (size_t j = 0; j < virtual_indices.size(); j++)
+      TpsiM(j, i) = psiM(i, virtual_indices[j]);
 
   std::complex<RealType> logValueRef;
   InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
@@ -227,8 +254,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
         psiV_temp[i] = dpsiM(iat, *(it++))[idim];
       InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, gradRatio[idim]);
       //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
-      for (size_t i = 0; i < NumOrbitals; i++)
-        TpsiM(i, iat) = dpsiM(iat, i)[idim];
+      for (size_t i = 0; i < virtual_indices.size(); i++)
+        TpsiM(i, iat) = dpsiM(iat, virtual_indices[i])[idim];
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, grads, dpsiMinv, TpsiM, dotProducts, *detData,
                                          *uniquePairs, *DetSigns, idim);
     }
@@ -238,8 +265,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       psiV_temp[i] = d2psiM(iat, *(it++));
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, ratioLapl);
     //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, iat) = d2psiM(iat, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, iat) = d2psiM(iat, virtual_indices[i]);
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
                                        *uniquePairs, *DetSigns);
 
@@ -249,14 +276,14 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     for (size_t i = 0; i < NumPtcls; i++)
       psiV_temp[i] = dspin_psiM(iat, *(it++));
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, spingradRatio);
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, iat) = dspin_psiM(iat, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, iat) = dspin_psiM(iat, virtual_indices[i]);
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, spingrads, dpsiMinv, TpsiM, dotProducts, *detData,
                                        *uniquePairs, *DetSigns);
 
     // restore matrix
-    for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM(i, iat) = psiM(iat, i);
+    for (size_t i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, iat) = psiM(iat, virtual_indices[i]);
   }
   psiMinv_temp = psiMinv;
   evalWTimer.stop();
@@ -305,12 +332,11 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     buf.get(spingrads.first_address(), spingrads.last_address());
   }
   // only used with ORB_PBYP_ALL,
-  psiMinv_temp = psiMinv;
-  int n1       = psiM.extent(0);
-  int n2       = psiM.extent(1);
-  for (int i = 0; i < n1; i++)
-    for (int j = 0; j < n2; j++)
-      TpsiM(j, i) = psiM(i, j);
+  psiMinv_temp                = psiMinv;
+  const auto& virtual_indices = *virtual_orbital_indices_;
+  for (int i = 0; i < psiM.rows(); i++)
+    for (int j = 0; j < virtual_indices.size(); j++)
+      TpsiM(j, i) = psiM(i, virtual_indices[j]);
 }
 
 /** move was accepted, update the real container
@@ -321,20 +347,21 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   assert(P.is_spinor_ == is_spinor_);
   log_value_ref_det_ += convertValueToLog(curRatio);
-  curRatio = ValueType(1);
+  curRatio                    = ValueType(1);
+  const auto& virtual_indices = *virtual_orbital_indices_;
   switch (UpdateMode)
   {
   case ORB_PBYP_RATIO:
     psiMinv = psiMinv_temp;
-    for (int i = 0; i < NumOrbitals; i++)
-      TpsiM(i, WorkingIndex) = psiV[i];
+    for (int i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, WorkingIndex) = psiV[virtual_indices[i]];
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
-    for (int i = 0; i < NumOrbitals; i++)
-      TpsiM(i, WorkingIndex) = psiV[i];
+    for (int i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, WorkingIndex) = psiV[virtual_indices[i]];
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
@@ -344,8 +371,8 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     break;
   default:
     psiMinv = psiMinv_temp;
-    for (int i = 0; i < NumOrbitals; i++)
-      TpsiM(i, WorkingIndex) = psiV[i];
+    for (int i = 0; i < virtual_indices.size(); i++)
+      TpsiM(i, WorkingIndex) = psiV[virtual_indices[i]];
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     std::copy(new_grads.begin(), new_grads.end(), grads.begin());
     std::copy(new_lapls.begin(), new_lapls.end(), lapls.begin());
@@ -367,10 +394,11 @@ void MultiDiracDeterminant::restore(int iat)
 {
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
-  psiMinv_temp = psiMinv;
-  for (int i = 0; i < NumOrbitals; i++)
-    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
-  curRatio = ValueType(1);
+  psiMinv_temp                = psiMinv;
+  curRatio                    = ValueType(1);
+  const auto& virtual_indices = *virtual_orbital_indices_;
+  for (int i = 0; i < virtual_indices.size(); i++)
+    TpsiM(i, WorkingIndex) = psiM(WorkingIndex, virtual_indices[i]);
   /*
       switch(UpdateMode)
       {
@@ -413,12 +441,15 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       is_spinor_(s.is_spinor_),
       detData(s.detData),
       uniquePairs(s.uniquePairs),
+      virtual_orbital_indices_(s.virtual_orbital_indices_),
       DetSigns(s.DetSigns)
 {
   Optimizable = s.Optimizable;
+  NumPtcls    = s.NumPtcls;
+  LastIndex   = s.LastIndex;
 
   registerTimers();
-  resize(s.NumPtcls);
+  resize();
 }
 
 SPOSetPtr MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
@@ -456,10 +487,11 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
-  ciConfigList = std::make_shared<std::vector<ci_configuration2>>();
-  detData      = std::make_shared<std::vector<int>>();
-  uniquePairs  = std::make_shared<std::vector<std::pair<int, int>>>();
-  DetSigns     = std::make_shared<std::vector<RealType>>();
+  ciConfigList             = std::make_shared<std::vector<ci_configuration2>>();
+  detData                  = std::make_shared<std::vector<int>>();
+  uniquePairs              = std::make_shared<std::vector<std::pair<int, int>>>();
+  virtual_orbital_indices_ = std::make_shared<std::vector<int>>();
+  DetSigns                 = std::make_shared<std::vector<RealType>>();
 
   registerTimers();
 }
@@ -494,19 +526,12 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 
-///reset the size: with the number of particles and number of orbtials
-/// morb is the total number of orbitals, including virtual
-void MultiDiracDeterminant::resize(int nel)
+void MultiDiracDeterminant::resize()
 {
-  if (nel <= 0)
-  {
-    APP_ABORT(" ERROR: MultiDiracDeterminant::resize arguments equal to zero. \n");
-  }
+  const int nel                    = NumPtcls;
+  const int NumDets                = getNumDets();
+  const int num_active_unoccupied_ = virtual_orbital_indices_->size();
 
-  const int NumDets = getNumDets();
-
-  NumPtcls  = nel;
-  LastIndex = FirstIndex + nel;
   psiV_temp.resize(nel);
   psiV.resize(NumOrbitals);
   dpsiV.resize(NumOrbitals);
@@ -514,7 +539,7 @@ void MultiDiracDeterminant::resize(int nel)
   psiM.resize(nel, NumOrbitals);
   dpsiM.resize(nel, NumOrbitals);
   d2psiM.resize(nel, NumOrbitals);
-  TpsiM.resize(NumOrbitals, nel);
+  TpsiM.resize(num_active_unoccupied_, nel);
   psiMinv.resize(nel, nel);
   dpsiMinv.resize(nel, nel);
   psiMinv_temp.resize(nel, nel);
@@ -529,7 +554,7 @@ void MultiDiracDeterminant::resize(int nel)
   new_grads.resize(NumDets, nel);
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
-  dotProducts.resize(NumOrbitals, NumOrbitals);
+  dotProducts.resize(nel, num_active_unoccupied_);
   DetCalculator.resize(nel);
 
   if (is_spinor_)
@@ -569,7 +594,7 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
   std::vector<int> occupancy_vector(nmo, 0);
 
   // Function to fill occupancy_vectors and also return number of unique determinants
-  const size_t unique_dets = build_occ_vec(*detData, nel, nmo, occupancy_vector);
+  const size_t unique_dets = build_occ_vec(*detData, *virtual_orbital_indices_, nel, nmo, occupancy_vector);
 
   // When calculating the parameter derivative of the Multi-Slater component of the wavefunction, each unique deterimant can contribute multiple times.
   // The lookup_tbls are used so that a parameter derivative of a unique determinant is only done once and then scaled according to how many times it appears in the Multi-Slater expansion
@@ -604,6 +629,7 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 }
 
 int MultiDiracDeterminant::build_occ_vec(const std::vector<int>& data,
+                                         const std::vector<int>& virtual_indices,
                                          const size_t nel,
                                          const size_t nmo,
                                          std::vector<int>& occ_vec)
@@ -624,7 +650,7 @@ int MultiDiracDeterminant::build_occ_vec(const std::vector<int>& data,
       {
         //for determining active orbitals
         occ_vec[*(it + 1 + i)]++;
-        occ_vec[*(it + 1 + k + i)]++;
+        occ_vec[virtual_indices[*(it + 1 + k + i)]]++;
       }
       it += 3 * k + 1;
       count++;
