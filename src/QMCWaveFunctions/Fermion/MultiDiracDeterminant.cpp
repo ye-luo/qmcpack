@@ -54,7 +54,7 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
 {
   const auto& confgList = *ciConfigList;
 
-  size_t nci = confgList.size(), nex;
+  const size_t nci = confgList.size();
   std::vector<size_t> pos(NumPtcls);
   std::vector<size_t> ocp(NumPtcls);
   std::vector<size_t> uno(NumPtcls);
@@ -63,9 +63,15 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
   sign.resize(nci);
   pairs.clear();
   virtual_orbital_indices.clear();
+
+  size_t highest_excitation = 0;
   for (size_t i = 0; i < nci; i++)
   {
+    size_t nex = 0;
     sign[i] = ref.calculateExcitations(confgList[i], nex, pos, ocp, uno);
+    highest_excitation = std::max(highest_excitation, nex);
+
+    // populate "data"
     data.push_back(nex);
     for (int k = 0; k < nex; k++)
       data.push_back(pos[k]);
@@ -99,7 +105,8 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
       }
   }
 
-  app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
+  app_log() << "Number of terms in pairs array: " << pairs.size()
+            << ", highest excitation: " << highest_excitation << std::endl;
 
   // print info for debugging
   app_debug() << "ref: " << ref << std::endl << "list: " << std::endl;
