@@ -16,6 +16,7 @@
 #include <vector>
 #include <iostream>
 #include "OMPTarget/OMPallocator.hpp"
+#include "OMPTarget/ompBLAS.hpp"
 
 namespace qmcplusplus
 {
