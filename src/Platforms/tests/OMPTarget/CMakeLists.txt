@@ -18,7 +18,7 @@ if(ENABLE_OFFLOAD)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
   add_executable(${UTEST_EXE} test_vector.cpp test_math.cpp test_deep_copy.cpp test_class_member.cpp
-                              test_runtime_mem.cpp)
+                              test_runtime_mem.cpp test_ompBLAS.cpp)
   target_link_libraries(${UTEST_EXE} platform_device catch_main)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} platform_omptarget)
