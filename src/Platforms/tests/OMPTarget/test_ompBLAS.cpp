@@ -19,7 +19,8 @@
 #include "OMPTarget/ompBLAS.hpp"
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <Numerics/OhmmsBlas.h>
+#include <CPU/BLAS.hpp>
+#include <checkMatrix.hpp>
 
 /*
 ompBLAS_status gemv(ompBLAS_handle&    handle,
