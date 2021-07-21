@@ -19,11 +19,7 @@ if(ENABLE_OFFLOAD)
 
   add_executable(${UTEST_EXE} test_vector.cpp test_math.cpp test_deep_copy.cpp test_class_member.cpp
                               test_runtime_mem.cpp test_ompBLAS.cpp)
-<<<<<<< HEAD
-  target_link_libraries(${UTEST_EXE} platform_device catch_main containers) 
-=======
   target_link_libraries(${UTEST_EXE} platform_device catch_main containers Math::BLAS_LAPACK utilities_for_test)
->>>>>>> 2c557eedd27418398990c8c9102bd71433e76627
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} platform_omptarget)
   endif()
