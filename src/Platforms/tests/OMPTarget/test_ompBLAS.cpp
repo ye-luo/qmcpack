@@ -23,11 +23,12 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("OmpBLAS gemv", "[OMP]")
+
+template<typename T>
+void test_gemvT(const int N)
 {
-  const int N = 100;
-  using vec_t = Vector<double, OMPallocator<double>>;
-  using mat_t = Matrix<double, OMPallocator<double>>;
+  using vec_t = Vector<T, OMPallocator<T>>;
+  using mat_t = Matrix<T, OMPallocator<T>>;
 
   ompBLAS::ompBLAS_handle handle;
 
@@ -68,4 +69,14 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
   }
 }
 
+TEST_CASE("OmpBLAS gemv", "[OMP]")
+{
+  const int N = 100;
+  test_gemvT<float>(N);
+  test_gemvT<double>(N);
+#if defined(QMC_COMPLEX)
+  test_gemvT<std::complex<float>>(N);
+  test_gemvT<std::complex<double>>(N);
+#endif
+}
 } // namespace qmcplusplus
