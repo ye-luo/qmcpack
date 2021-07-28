@@ -19,12 +19,20 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <CPU/BLAS.hpp>
+<<<<<<< HEAD
+=======
+#include <checkMatrix.hpp>
+>>>>>>> 33424040a430be6cf30518627ef7736c574909b4
 
 namespace qmcplusplus
 {
 
 template<typename T>
+<<<<<<< HEAD
 void test_gemv(const int N, const char trans)
+=======
+void test_gemvT(const int N)
+>>>>>>> 33424040a430be6cf30518627ef7736c574909b4
 {
   using vec_t = Vector<T, OMPallocator<T>>;
   using mat_t = Matrix<T, OMPallocator<T>>;
@@ -33,7 +41,11 @@ void test_gemv(const int N, const char trans)
 
   vec_t A(N);    // Input vector
   mat_t B(N, N); // Input matrix
+<<<<<<< HEAD
   vec_t C(N);    // Result vector ompBLAS
+=======
+  vec_t C(N);    // Result vector (test)
+>>>>>>> 33424040a430be6cf30518627ef7736c574909b4
   vec_t D(N);    // Result vector BLAS
 
   for (int dim = 1; dim <= N; dim++)
@@ -49,6 +61,7 @@ void test_gemv(const int N, const char trans)
     A.updateTo();
     B.updateTo();
 
+<<<<<<< HEAD
     ompBLAS::gemv(handle, trans, dim, dim, 1.0, B.device_data(), dim, A.device_data(), 1, 0.0, C.device_data(),
                   1); // tests omp gemv
     if(trans == 'T')
@@ -61,6 +74,16 @@ void test_gemv(const int N, const char trans)
     
     C.updateFrom();
 
+=======
+    ompBLAS::gemv(handle, 'T', dim, dim, 1.0, B.device_data(), dim, A.device_data(), 1, 0.0, C.device_data(),
+                  1); // tests omp gemv
+    BLAS::gemv(dim, dim, B.data(), A.data(), D.data());
+
+    C.updateFrom();
+
+    //std::cout << "checking dim " << dim << std::endl;
+
+>>>>>>> 33424040a430be6cf30518627ef7736c574909b4
     bool are_same = true;
     int index     = 0;
     do
@@ -72,6 +95,7 @@ void test_gemv(const int N, const char trans)
   }
 }
 
+<<<<<<< HEAD
 template<typename T>
 void test_gemv_batched(const int N, const char trans, const int batch_count)
 {
@@ -213,5 +237,16 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
   std::cout << "Testing TRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(N, 'T', 13);
   
+=======
+TEST_CASE("OmpBLAS gemv", "[OMP]")
+{
+  const int N = 100;
+  test_gemvT<float>(N);
+  test_gemvT<double>(N);
+#if defined(QMC_COMPLEX)
+  test_gemvT<std::complex<float>>(N);
+  test_gemvT<std::complex<double>>(N);
+#endif
+>>>>>>> 33424040a430be6cf30518627ef7736c574909b4
 }
 } // namespace qmcplusplus
