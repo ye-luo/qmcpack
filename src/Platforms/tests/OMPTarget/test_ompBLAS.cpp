@@ -97,82 +97,97 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
   std::vector<vec_t> Ds;
   Vector<T*, OMPallocator<T*>> Dptrs;
 
-  // Change N to batch size?
-  Aptrs.resize(N);
-  Bptrs.resize(N * N);
-  Cptrs.resize(N);
-  Dptrs.resize(N);
-  for (int dim = 1; dim <= N; dim++)
+  /*
+  // Change N to batch size
+  Aptrs.resize(batch_count);
+  Bptrs.resize(batch_count);
+  Cptrs.resize(batch_count);
+  Dptrs.resize(batch_count);
+  */
+  /*
+  // Fill data
+  for(int batch = 0; batch < batch_count; batch++)
     {
-      handle = dim;
-
-      // Fill data
-      for(int batch = 0; batch < dim; batch++)
-	{ 
-	  As[batch].resize(dim);
-	  Aptrs[batch] = As[batch].device_data();
-
-	  Bs[batch].resize(dim, dim);
-	  Bptrs[batch] = Bs[batch].device_data();
-
-	  Cs[batch].resize(dim);
-	  Cptrs[batch] = Cs[batch].device_data();
-	  
-          Ds[batch].resize(dim);
-	  Dptrs[batch] = Ds[batch].device_data();
-	  
-	  for (int i = 0; i < dim; i++)
-	    {
-	      As[batch][i] = i;
-	      for (int j = 0; j < dim; j++)
-		Bs[batch].device_data()[i * dim + j] = i + j;
-	    }
-	  As[batch].updateTo();
-	  Bs[batch].updateTo();
-	}
-      Aptrs.updateTo();
-      Bptrs.updateTo();
-      Cptrs.updateTo();
       
-      // run tests here 
-      Vector<T, OMPallocator<T>> alpha;
-      alpha.resize(N, T(1));
-      Vector<T, OMPallocator<T>> beta;
-      beta.resize(N, T(1));
-
-      ompBLAS::gemv_batched(handle, trans, dim, dim, alpha.data(), Bptrs.device_data(), dim, Aptrs.device_data(), 1, beta.data(), Cptrs.device_data(), 1, 13);
+      handle = batch;
       
-      for(int batch = 0; batch < dim; batch++)
+      As[batch].resize(N);
+      Aptrs[batch] = As[batch].device_data();
+      
+      Bs[batch].resize(N, N);
+      Bptrs[batch] = Bs[batch].device_data();
+      
+      Cs[batch].resize(N);
+      Cptrs[batch] = Cs[batch].device_data();
+      
+      Ds[batch].resize(N);
+      Dptrs[batch] = Ds[batch].data();
+      
+      for (int i = 0; i < N; i++)
 	{
-	  if(trans == 'T')
-	    {
-	      BLAS::gemv_trans(dim, dim, Bptrs[batch], Aptrs[batch], Dptrs[batch]);
-	    } else
-	    {
-	      BLAS::gemv(dim, dim, Bptrs[batch], Aptrs[batch], Dptrs[batch]);
-	    }
+	  As[batch].device_data()[i] = i;
+	  for (int j = 0; j < N; j++)
+	    Bs[batch].device_data()[i * N + j] = i + j;
 	}
+      As[batch].updateTo();
+      Bs[batch].updateTo();
+    }
+  Aptrs.updateTo();
+  Bptrs.updateTo();
+  Cptrs.updateTo();
+  */
 
-      Cptrs.updateFrom();
-      
-      bool are_same = true;
-      int index     = 0;
-      for(int batch = 1; batch <= dim; batch++)
-	{
-	  do
-	    {
-	      are_same = Cptrs[batch][index] == Dptrs[batch][index];
-	      CHECK(are_same);
-	      index++;
-	    } while (are_same == true && index < dim);
-	}
+/*
+  // run tests here 
+  Vector<T, OMPallocator<T>> alpha;
+  alpha.resize(batch_count);
+  Vector<T, OMPallocator<T>> beta;
+  beta.resize(batch_count);
+
+  for(int batch = 0; batch < batch_count; batch++)
+    {
+      alpha[batch] = T(1);
+      beta[batch] = T(1);
     }
   
+  alpha.updateTo();
+  beta.updateTo();
+  */
+  // ompBLAS::gemv_batched(handle, trans, N, N, alpha.device_data(), Bptrs.device_data(), N, Aptrs.device_data(), 1, beta.device_data(), Cptrs.device_data(), 1, batch_count);
+
+  /*
+  for(int batch = 0; batch < batch_count; batch++)
+    {
+      if(trans == 'T')
+	{
+	  BLAS::gemv_trans(N, N, Bptrs.data()[batch], Aptrs.data()[batch], Dptrs.data()[batch]);
+	} else
+	{
+	  BLAS::gemv(N, N, Bptrs.data()[batch], Aptrs.data()[batch], Dptrs.data()[batch]);
+	}
+    }
+  */
+  Cptrs.updateFrom();
+  /*
+  bool are_same = true;
+  int index     = 0;
+  for(int batch = 0; batch < batch_count; batch++)
+    {
+      do
+	{
+	  are_same = Cptrs.device_data()[batch][index] == Dptrs.data()[batch][index];
+	  CHECK(are_same);
+	  index++;
+	} while (are_same == true && index < N);
+    }
+  */
 }
   
+
+
 TEST_CASE("OmpBLAS gemv", "[OMP]")
 {
-
+  
   const int N = 100;
   
   // NOTRNS NOT IMPL
