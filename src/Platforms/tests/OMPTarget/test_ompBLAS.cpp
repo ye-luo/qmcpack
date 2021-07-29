@@ -84,24 +84,30 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
   // Create input vector
   std::vector<vec_t> As;
   Vector<const T*, OMPallocator<const T*>> Aptrs;
-
+  
   // Create input matrix
   std::vector<mat_t> Bs;
   Vector<const T*, OMPallocator<const T*>> Bptrs;
-
+  
   // Create output vector (ompBLAS)
   std::vector<vec_t> Cs;
   Vector<T*, OMPallocator<T*>> Cptrs;
-
+ 
   // Create output vector (BLAS)
   std::vector<vec_t> Ds;
-  Vector<T*, OMPallocator<T*>> Dptrs;
-
-  // Change N to batch size
+  Vector<T*, OMPallocator<T*>> Dptrs;  
+  
+  // Resize pointer vectors
   Aptrs.resize(batch_count);
   Bptrs.resize(batch_count);
   Cptrs.resize(batch_count);
   Dptrs.resize(batch_count);
+
+  // Resize data vectors
+  As.resize(batch_count);
+  Bs.resize(batch_count);
+  Cs.resize(batch_count);
+  Ds.resize(batch_count);
   
   // Fill data ERROR IS IN HERE
   for(int batch = 0; batch < batch_count; batch++)
@@ -183,7 +189,7 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
     {
       do
 	{
-	  are_same = Cs[batch].data() == Ds[batch].data();
+	  are_same = Cs[batch][index] == Ds[batch][index];
 	  CHECK(are_same);
 	  index++;
 	} while (are_same == true && index < N);
