@@ -131,7 +131,7 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
 	{
 	  As[batch][i] = i;
 	  for (int j = 0; j < N; j++)
-	    Bs[batch].data()[i * N + j] = i + j;
+	    Bs[batch].data()[i * N + j] = i + j * 2;
 	}
       
       As[batch].updateTo();
@@ -184,9 +184,9 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
   //Cptrs.updateFrom();
   
   bool are_same = true;
-  int index     = 0;
   for(int batch = 0; batch < batch_count; batch++)
     {
+  int index     = 0;
       do
 	{
 	  are_same = Cs[batch][index] == Ds[batch][index];
