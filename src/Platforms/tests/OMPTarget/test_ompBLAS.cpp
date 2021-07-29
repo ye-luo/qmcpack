@@ -97,15 +97,13 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
   std::vector<vec_t> Ds;
   Vector<T*, OMPallocator<T*>> Dptrs;
 
-  /*
   // Change N to batch size
   Aptrs.resize(batch_count);
   Bptrs.resize(batch_count);
   Cptrs.resize(batch_count);
   Dptrs.resize(batch_count);
-  */
-  /*
-  // Fill data
+  
+  // Fill data ERROR IS IN HERE
   for(int batch = 0; batch < batch_count; batch++)
     {
       
@@ -125,19 +123,21 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
       
       for (int i = 0; i < N; i++)
 	{
-	  As[batch].device_data()[i] = i;
+	  As[batch][i] = i;
 	  for (int j = 0; j < N; j++)
-	    Bs[batch].device_data()[i * N + j] = i + j;
+	    Bs[batch].data()[i * N + j] = i + j;
 	}
+      
       As[batch].updateTo();
       Bs[batch].updateTo();
     }
+  
   Aptrs.updateTo();
   Bptrs.updateTo();
   Cptrs.updateTo();
-  */
+  
 
-/*
+
   // run tests here 
   Vector<T, OMPallocator<T>> alpha;
   alpha.resize(batch_count);
@@ -152,35 +152,42 @@ void test_gemv_batched(const int N, const char trans, const int batch_count)
   
   alpha.updateTo();
   beta.updateTo();
-  */
-  // ompBLAS::gemv_batched(handle, trans, N, N, alpha.device_data(), Bptrs.device_data(), N, Aptrs.device_data(), 1, beta.device_data(), Cptrs.device_data(), 1, batch_count);
+ 
 
-  /*
+  ompBLAS::gemv_batched(handle, trans, N, N, alpha.device_data(), Bptrs.device_data(), N, Aptrs.device_data(), 1, beta.device_data(), Cptrs.device_data(), 1, batch_count);
+
+  
   for(int batch = 0; batch < batch_count; batch++)
     {
       if(trans == 'T')
 	{
-	  BLAS::gemv_trans(N, N, Bptrs.data()[batch], Aptrs.data()[batch], Dptrs.data()[batch]);
+	  BLAS::gemv_trans(N, N, Bs[batch].data(), As[batch].data(), Ds[batch].data());
 	} else
 	{
-	  BLAS::gemv(N, N, Bptrs.data()[batch], Aptrs.data()[batch], Dptrs.data()[batch]);
+	  BLAS::gemv(N, N, Bs[batch].data(), As[batch].data(), Ds[batch].data());
 	}
     }
-  */
-  Cptrs.updateFrom();
-  /*
+
+  //  Cptrs.updateFrom();
+  
+  for(int batch = 0; batch < batch_count; batch++)
+    {
+      Cs[batch].updateFrom();
+    }
+  
+  //Cptrs.updateFrom();
+  
   bool are_same = true;
   int index     = 0;
   for(int batch = 0; batch < batch_count; batch++)
     {
       do
 	{
-	  are_same = Cptrs.device_data()[batch][index] == Dptrs.data()[batch][index];
+	  are_same = Cs[batch].data() == Ds[batch].data();
 	  CHECK(are_same);
 	  index++;
 	} while (are_same == true && index < N);
-    }
-  */
+    } 
 }
   
 
