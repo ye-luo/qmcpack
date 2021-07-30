@@ -24,93 +24,94 @@ namespace qmcplusplus
 {
 
 template<typename T>
-void test_gemv(const int M, const int N, const char trans)
+void test_gemv(const int M_b, const int N_b, const char trans)
 {
+  const int M = trans == 'T'? M_b: N_b;
+  const int N = trans == 'T'? N_b: M_b;
+
   using vec_t = Vector<T, OMPallocator<T>>;
   using mat_t = Matrix<T, OMPallocator<T>>;
 
   ompBLAS::ompBLAS_handle handle;
 
   vec_t A(N);    // Input vector
-  mat_t B(M, N); // Input matrix
-  vec_t C(N);    // Result vector ompBLAS
-  vec_t D(N);    // Result vector BLAS  
-  
+  mat_t B(M_b, N_b); // Input matrix
+  vec_t C(M);    // Result vector ompBLAS
+  vec_t D(M);    // Result vector BLAS
+
   // Fill data
-  for(int i = 0; i < N; i++)
-    {
-      A[i] = i;
-      for(int j = 0; j < M; j++)
-	{
-	  B.data()[j * N + i] = i + j * 2;
-	}
-    }
+  for (int i = 0; i < N; i++)
+    A[i] = i;
+
+  for (int j = 0; j < M_b; j++)
+    for (int i = 0; i < N_b; i++)
+      B[j][i] = i + j * 2;
 
   // Fill C and D with 0
-  for(int i = 0; i < M; i++)
-    {
-      C[i] = T(0);
-      D[i] = T(0);
-    }
-  
+  for (int i = 0; i < M; i++)
+    C[i] = D[i] = T(0);
+
   A.updateTo();
   B.updateTo();
 
   std::cout << "A[";
-  for(int i = 0; i < N; i++)
+  for (int i = 0; i < N; i++)
     std::cout << A[i] << ", ";
   std::cout << "]" << std::endl;
 
   std::cout << "B[";
-  for(int i = 0; i < N * M; i++)
-    std::cout << B.data()[i] << ", ";
-  std::cout << "]" << std::endl;
+  for (int j = 0; j < M_b; j++)
+  {
+    for (int i = 0; i < N_b; i++)
+      std::cout << B[j][i] << ", ";
+    if (j == M_b - 1)
+      std::cout << "]";
+    std::cout << std::endl;
+  }
 
   std::cout << "C[";
-  for(int i = 0; i < M; i++)
+  for (int i = 0; i < M; i++)
     std::cout << C[i] << ", ";
   std::cout << "]" << std::endl;
 
   std::cout << "D[";
-  for(int i = 0; i < M; i++)
+  for (int i = 0; i < M; i++)
     std::cout << D[i] << ", ";
   std::cout << "]" << std::endl;
-  
-  T alpha = T(1);
-  T beta = T(0);
-  // ompBLAS::gemv(handle, trans, M, N, alpha, matrix, LDA = M, vector, incx, beta, result, incy);
-  ompBLAS::gemv(handle, trans, M, N, alpha, B.device_data(), M, A.device_data(), 1, beta, C.device_data(), 1);
 
-  // BLAS::gemv(N, M, matrix, vector, result)
-  if(trans == 'T')                                                                                                                                                               
-      {                                                                                                                                                                           
-        BLAS::gemv_trans(N, M, B.data(), A.data(), D.data()); 
-      } else
-    {
-      BLAS::gemv(N, M, B.data(), A.data(), D.data());                                                                                                                        
-    }                                                                                                                                                                            
-  
+  T alpha(1);
+  T beta(0);
+  // in Fortran, B[M][N] is viewed as B^T
+  // when trans == 'T', the actual calculation is B * A[N] = C[M]
+  // when trans == 'N', the actual calculation is B^T * A[M] = C[N]
+  ompBLAS::gemv(handle, trans, N_b, M_b, alpha, B.device_data(), N_b, A.device_data(), 1, beta, C.device_data(), 1);
+
+  if (trans == 'T')
+    BLAS::gemv_trans(M_b, N_b, B.data(), A.data(), D.data());
+  else
+    BLAS::gemv(M_b, N_b, B.data(), A.data(), D.data());
+
   C.updateFrom();
-  
+
   std::cout << "C[";
-  for(int i = 0; i < M; i++)
+  for (int i = 0; i < M; i++)
     std::cout << C.data()[i] << ", ";
-  std:: cout << "]" << std::endl;
+  std::cout << "]" << std::endl;
 
   std::cout << "D[";
-  for(int i = 0; i < M; i++)
-    std::cout << D.data()[i]<< ", ";
-  std::	cout <<	"]" << std::endl;
-  
-  bool are_same = true;                                                                                                                                                          
-  int index     = 0;                                                                                                                                                             
-  do                                                                                                                                                                             
-    {                                                                                                                                                                             
-      are_same = C[index] == D[index];                                                                                                                                            
-      CHECK(C[index] == D[index]);                                                                                                                                                
-      index++;                                                                                                                                                                    
-    } while (are_same == true && index < M);                                          
-           
+  for (int i = 0; i < M; i++)
+    std::cout << D.data()[i] << ", ";
+  std::cout << "]" << std::endl;
+
+  bool are_same = true;
+  int index     = 0;
+  do
+  {
+    are_same = C[index] == D[index];
+    CHECK(C[index] == D[index]);
+    index++;
+  } while (are_same == true && index < M);
+
   // Original test for NxN only
   /*
   for (int dim = 1; dim <= N; dim++)
@@ -151,9 +152,8 @@ void test_gemv(const int M, const int N, const char trans)
 }
 
 template<typename T>
-void test_gemv_batched(const int M, const int N,  const char trans, const int batch_count)
+void test_gemv_batched(const int M, const int N, const char trans, const int batch_count)
 {
-
   using vec_t = Vector<T, OMPallocator<T>>;
   using mat_t = Matrix<T, OMPallocator<T>>;
 
@@ -162,19 +162,19 @@ void test_gemv_batched(const int M, const int N,  const char trans, const int ba
   // Create input vector
   std::vector<vec_t> As;
   Vector<const T*, OMPallocator<const T*>> Aptrs;
-  
+
   // Create input matrix
   std::vector<mat_t> Bs;
   Vector<const T*, OMPallocator<const T*>> Bptrs;
-  
+
   // Create output vector (ompBLAS)
   std::vector<vec_t> Cs;
   Vector<T*, OMPallocator<T*>> Cptrs;
- 
+
   // Create output vector (BLAS)
   std::vector<vec_t> Ds;
-  Vector<T*, OMPallocator<T*>> Dptrs;  
-  
+  Vector<T*, OMPallocator<T*>> Dptrs;
+
   // Resize pointer vectors
   Aptrs.resize(batch_count);
   Bptrs.resize(batch_count);
@@ -186,97 +186,96 @@ void test_gemv_batched(const int M, const int N,  const char trans, const int ba
   Bs.resize(batch_count);
   Cs.resize(batch_count);
   Ds.resize(batch_count);
-  
+
   // Fill data
-  for(int batch = 0; batch < batch_count; batch++)
+  for (int batch = 0; batch < batch_count; batch++)
+  {
+    handle = batch;
+
+    As[batch].resize(N);
+    Aptrs[batch] = As[batch].device_data();
+
+    Bs[batch].resize(M, N);
+    Bptrs[batch] = Bs[batch].device_data();
+
+    Cs[batch].resize(M);
+    Cptrs[batch] = Cs[batch].device_data();
+
+    Ds[batch].resize(M);
+    Dptrs[batch] = Ds[batch].data();
+
+    for (int i = 0; i < N; i++)
     {
-      
-      handle = batch;
-      
-      As[batch].resize(N);
-      Aptrs[batch] = As[batch].device_data();
-      
-      Bs[batch].resize(M, N);
-      Bptrs[batch] = Bs[batch].device_data();
-      
-      Cs[batch].resize(M);
-      Cptrs[batch] = Cs[batch].device_data();
-      
-      Ds[batch].resize(M);
-      Dptrs[batch] = Ds[batch].data();
-      
-      for (int i = 0; i < N; i++)
-	{
-	  As[batch][i] = i;
-	  for (int j = 0; j < M; j++)
-	    Bs[batch].data()[i + N * j] = i + j * 2;
-	}
-      
-      As[batch].updateTo();
-      Bs[batch].updateTo();
+      As[batch][i] = i;
+      for (int j = 0; j < M; j++)
+        Bs[batch].data()[i + N * j] = i + j * 2;
     }
-  
+
+    As[batch].updateTo();
+    Bs[batch].updateTo();
+  }
+
   Aptrs.updateTo();
   Bptrs.updateTo();
   Cptrs.updateTo();
-  
-  // Run tests 
+
+  // Run tests
   Vector<T, OMPallocator<T>> alpha;
   alpha.resize(batch_count);
   Vector<T, OMPallocator<T>> beta;
   beta.resize(batch_count);
 
-  for(int batch = 0; batch < batch_count; batch++)
-    {
-      alpha[batch] = T(1);
-      beta[batch] = T(1);
-    }
-  
+  for (int batch = 0; batch < batch_count; batch++)
+  {
+    alpha[batch] = T(1);
+    beta[batch]  = T(1);
+  }
+
   alpha.updateTo();
   beta.updateTo();
 
 
-  ompBLAS::gemv_batched(handle, trans, M, N, alpha.device_data(), Bptrs.device_data(), M, Aptrs.device_data(), 1, beta.device_data(), Cptrs.device_data(), 1, batch_count);
+  ompBLAS::gemv_batched(handle, trans, M, N, alpha.device_data(), Bptrs.device_data(), M, Aptrs.device_data(), 1,
+                        beta.device_data(), Cptrs.device_data(), 1, batch_count);
 
-  
-  for(int batch = 0; batch < batch_count; batch++)
+
+  for (int batch = 0; batch < batch_count; batch++)
+  {
+    if (trans == 'T')
     {
-      if(trans == 'T')
-	{
-	  BLAS::gemv_trans(N, M, Bs[batch].data(), As[batch].data(), Ds[batch].data());
-	} else
-	{
-	  BLAS::gemv(N, M, Bs[batch].data(), As[batch].data(), Ds[batch].data());
-	}
+      BLAS::gemv_trans(N, M, Bs[batch].data(), As[batch].data(), Ds[batch].data());
     }
-  
-  for(int batch = 0; batch < batch_count; batch++)
+    else
     {
-      Cs[batch].updateFrom();
+      BLAS::gemv(N, M, Bs[batch].data(), As[batch].data(), Ds[batch].data());
     }
+  }
+
+  for (int batch = 0; batch < batch_count; batch++)
+  {
+    Cs[batch].updateFrom();
+  }
 
   // Check results
-  for(int batch = 0; batch < batch_count; batch++)
+  for (int batch = 0; batch < batch_count; batch++)
+  {
+    bool are_same = true;
+    int index     = 0;
+    do
     {
-      bool are_same = true;
-      int index     = 0;
-      do
-	{
-	  are_same = Cs[batch][index] == Ds[batch][index];
-	  CHECK(are_same);
-	  index++;
-	} while (are_same == true && index < M);
-    } 
+      are_same = Cs[batch][index] == Ds[batch][index];
+      CHECK(are_same);
+      index++;
+    } while (are_same == true && index < M);
+  }
 }
-  
 
 
 TEST_CASE("OmpBLAS gemv", "[OMP]")
 {
-  
-  const int N = 2;
-  const int M = 3;
-  
+  const int N = 5;
+  const int M = 7;
+
   // NOTRNS NOT IMPL
   /*
   std::cout << "Testing NOTRANS gemv" << std::endl;
@@ -287,7 +286,7 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
   test_gemv<std::complex<double>>(N, 'N');
 #endif
   */
- 
+
   // Non-batched test
   std::cout << "Testing TRANS gemv" << std::endl;
   test_gemv<float>(M, N, 'T');
@@ -296,7 +295,7 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
   test_gemv<std::complex<float>>(N, M, 'T');
   test_gemv<std::complex<double>>(N, M, 'T');
 #endif
- 
+
   /*
   // Batched Test
   std::cout << "Testing TRANS gemv_batched" << std::endl;
