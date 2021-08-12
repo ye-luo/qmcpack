@@ -129,7 +129,8 @@ void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveF
                                                  bool safe_to_delay) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
+  PRAGMA_OMP_TASKLOOP("omp taskloop nogroup default(none) shared(p_list, isAccepted) \
+                       firstprivate(wfc_list, iat, safe_to_delay)")
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (isAccepted[iw])
       wfc_list[iw].acceptMove(p_list[iw], iat, safe_to_delay);

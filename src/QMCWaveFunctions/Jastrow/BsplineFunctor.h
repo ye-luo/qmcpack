@@ -533,7 +533,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
                     map(to: grp_ids[:n_src]) \
                     map(to: mw_dist[:dist_stride*nw]) \
                     map(to: mw_vgl[:(DIM+2)*nw]) \
-                    map(always, from: mw_allUat[:nw * n_padded * (DIM + 2)])")
+                    map(always, from: mw_allUat[:nw * n_padded * (DIM + 2)]) \
+                    nowait depend(out: mw_allUat[:nw * n_padded * (DIM + 2)])")
     for (int iw = 0; iw < nw_accepted; iw++)
     {
       T** mw_coefs          = reinterpret_cast<T**>(transfer_buffer_ptr);
