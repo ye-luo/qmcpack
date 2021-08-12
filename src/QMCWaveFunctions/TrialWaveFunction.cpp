@@ -678,6 +678,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
+      #pragma omp taskgroup
       wavefunction_components[i]->mw_ratioGrad(wfc_list, p_list, iat, ratios_z, grad_new);
       for (int iw = 0; iw < wf_list.size(); iw++)
         ratios[iw] *= ratios_z[iw];

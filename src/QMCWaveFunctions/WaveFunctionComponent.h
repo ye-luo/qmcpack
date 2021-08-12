@@ -307,6 +307,8 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat particle index
    * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
    * @param grad_now the list of new gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   *
+   * ratios and grad_now results are asynchronous.
    */
   virtual void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                             const RefVectorWithLeader<ParticleSet>& p_list,

@@ -211,6 +211,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
   }
 
   wfc_leader.UpdateMode = ORB_PBYP_PARTIAL;
+  PRAGMA_OFFLOAD("omp task depend(in: ratios_local) default(none) \
+                  shared(ratios, grad_new, ratios_local, grad_new_local) firstprivate(wfc_list)")
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
     auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
@@ -565,6 +567,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader
     // We may implement mw_evaluateVandDetRatio in the future.
     wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view,
                                                    ratios_local, grad_new_local);
+    PRAGMA_OFFLOAD("omp taskwait");
   }
 
   wfc_leader.UpdateMode = ORB_PBYP_RATIO;

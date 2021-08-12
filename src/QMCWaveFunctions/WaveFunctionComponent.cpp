@@ -116,7 +116,8 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
                                          std::vector<GradType>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
+  PRAGMA_OMP_TASKLOOP("omp taskloop nogroup default(none) \
+                       firstprivate(wfc_list, iat) shared(p_list, ratios, grad_new)")
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratioGrad(p_list[iw], iat, grad_new[iw]);
 }

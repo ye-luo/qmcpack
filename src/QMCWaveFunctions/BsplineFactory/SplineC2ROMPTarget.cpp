@@ -904,7 +904,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
-                    map(always, from: rg_private_ptr[0:rg_private.size()])")
+                    map(always, from: rg_private_ptr[:rg_private.size()]) \
+                    nowait depend(out: rg_private_ptr[:rg_private.size()])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -988,6 +989,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
       }
   }
 
+  PRAGMA_OFFLOAD("omp task default(none) firstprivate(num_pos, NumTeams) shared(ratios, grads, rg_private) \
+                  depend(in: rg_private_ptr[0:rg_private.size()]) depend(out: ratios)")
   for (int iw = 0; iw < num_pos; iw++)
   {
     ValueType ratio(0);

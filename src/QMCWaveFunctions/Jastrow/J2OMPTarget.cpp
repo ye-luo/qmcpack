@@ -446,6 +446,7 @@ void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionCompone
   FT::mw_evaluateVGL(iat, NumGroups, F.data() + p_leader.GroupID[iat] * NumGroups, wfc_leader.N, grp_ids.data(), nw,
                      mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
                      wfc_leader.mw_mem_->mw_ratiograd_buffer);
+  PRAGMA_OFFLOAD("omp taskwait")
 
   for (int iw = 0; iw < nw; iw++)
   {
@@ -524,6 +525,9 @@ void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionCompone
                      mw_vgl.data(), N_padded, dt_leader.getMultiWalkerTempDataPtr(), mw_cur_allu.data(),
                      wfc_leader.mw_mem_->mw_ratiograd_buffer);
 
+  const auto* mw_vgl_ptr = mw_vgl.data();
+  PRAGMA_OFFLOAD("omp task depend(in: mw_vgl_ptr[:mw_vgl.size()]) default(none) \
+                  shared(ratios, grad_new, mw_vgl) firstprivate(wfc_list, nw, iat)")
   for (int iw = 0; iw < nw; iw++)
   {
     auto& wfc   = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
