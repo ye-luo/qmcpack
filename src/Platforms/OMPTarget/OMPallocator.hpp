@@ -18,11 +18,10 @@
 #include <memory>
 #include <type_traits>
 #include <atomic>
+#include <omp.h>
 #include "config.h"
 #include "allocator_traits.hpp"
-#ifdef ENABLE_CUDA
-#include <cuda_runtime_api.h>
-#endif
+
 namespace qmcplusplus
 {
 extern std::atomic<size_t> OMPallocator_device_mem_allocated;
@@ -148,6 +147,40 @@ struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
     for (int i = 0; i < n; i++)
       dev_ptr[to + i] = dev_ptr[from + i];
   }
+};
+
+template<typename T>
+struct OMPDeviceAllocator
+{
+  using value_type    = T;
+  using size_type     = std::size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
+
+  value_type* allocate(std::size_t n)
+  {
+    value_type* pt = (value_type*)omp_target_alloc(n * sizeof(T), omp_get_default_device());
+    OMPallocator_device_mem_allocated += n * sizeof(T);
+    return pt;
+  }
+
+  void deallocate(value_type* pt, std::size_t n)
+  {
+    omp_target_free(pt, omp_get_default_device());
+    OMPallocator_device_mem_allocated -= n * sizeof(T);
+  }
+
+};
+
+/** Specialization for OMPDeviceAllocator.
+ */
+template<typename T>
+struct qmc_allocator_traits<OMPDeviceAllocator<T>>
+{
+  static const bool is_host_accessible = false;
+  static const bool is_dual_space      = false;
+  // containers with device only allocators doesn't initialize values
+  static void fill_n(T* ptr, size_t n, const T& value) { }
 };
 
 } // namespace qmcplusplus
