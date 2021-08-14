@@ -187,9 +187,9 @@ public:
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P) override
   {
+    ScopedTimer local_timer(evaluate_timer_);
     resize();
 
-    ScopedTimer local_timer(evaluate_timer_);
     // be aware of the sign of Displacement
     const int N_targets_local  = N_targets;
     const int N_sources_local  = N_sources;

@@ -631,6 +631,8 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
   electrons.createResource(pset_res);
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
+  ParticleSet::mw_update(p_list);
+
   std::vector<ParticleSet::SingleParticlePos_t> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
   ParticleSet::mw_makeMove(p_list, 0, disp);

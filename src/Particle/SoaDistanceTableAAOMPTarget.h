@@ -30,8 +30,8 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  ///actual memory for dist and displacements_
-  aligned_vector<RealType> memory_pool_;
+  ///actual memory for distances and displacements, single walker
+  Vector<RealType, aligned_allocator<T>> memory_pool_;
 
   /// old distances
   DistRow old_r_;
@@ -42,6 +42,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///multi walker shared memory buffer
   struct DTAAMultiWalkerMem : public Resource
   {
+    ///dist displ for distances and displacements, host only but pinned
+    Vector<RealType, PinnedAlignedAllocator<RealType>> nw_dist_displs_pool;
     ///dist displ for temporary and old pairs
     Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
 
@@ -73,7 +75,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
     if (!coordinates_soa)
       throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
-    resize();
     PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
@@ -135,6 +136,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     dt_leader.mw_mem_.reset(res_ptr);
     auto& mw_mem             = *dt_leader.mw_mem_;
     const size_t nw          = dt_list.size();
+    const size_t total_size  = compute_size(N_targets);
     const size_t stride_size = Ntargets_padded * (D + 1);
 
     for (int iw = 0; iw < nw; iw++)
@@ -144,13 +146,26 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       dt.temp_dr_.free();
       dt.old_r_.free();
       dt.old_dr_.free();
+      dt.memory_pool_.free();
     }
 
     auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
     nw_new_old_dist_displ.resize(nw * 2 * stride_size);
+    auto& mw_pool = mw_mem.nw_dist_displs_pool;
+    mw_pool.resize(nw * total_size * (1 + D));
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+
+      dt.distances_.resize(N_targets);
+      dt.displacements_.resize(N_targets);
+      auto walker_pool_ptr = mw_pool.data() + total_size * (1 + D) * iw;
+      for (int i = 0; i < N_targets; ++i)
+      {
+        dt.distances_[i].attachReference(walker_pool_ptr + compute_size(i), i);
+        dt.displacements_[i].attachReference(i, total_size, walker_pool_ptr + total_size + compute_size(i));
+      }
+
       dt.temp_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * iw, Ntargets_padded);
       dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
                                   nw_new_old_dist_displ.data() + stride_size * iw + Ntargets_padded);
@@ -172,16 +187,52 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       dt.temp_dr_.free();
       dt.old_r_.free();
       dt.old_dr_.free();
+      for (int i = 0; i < N_targets; ++i)
+      {
+        dt.distances_[i].free();
+        dt.displacements_[i].free();
+      }
     }
   }
 
   inline void evaluate(ParticleSet& P) override
   {
     ScopedTimer local_timer(evaluate_timer_);
+    resize();
 
     for (int iat = 1; iat < N_targets; ++iat)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
                                              displacements_[iat], 0, iat, iat);
+  }
+
+  inline void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list) const override
+  {
+    assert(this == &dt_list.getLeader());
+    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    // multi walker resource must have been acquired;
+    assert(dt_leader.mw_mem_);
+    auto& mw_mem      = *dt_leader.mw_mem_;
+    auto& pset_leader = p_list.getLeader();
+
+    ScopedTimer local_timer(evaluate_timer_);
+    const size_t nw = dt_list.size();
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& P  = p_list[iw];
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      for (int iat = 1; iat < N_targets; ++iat)
+        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(),
+                                               dt.distances_[iat].data(), dt.displacements_[iat], 0, iat, iat);
+    }
+  }
+
+  inline void mw_recompute(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           const std::vector<bool>& recompute) const override
+  {
+    mw_evaluate(dt_list, p_list);
   }
 
   ///evaluate the temporary pair relations
