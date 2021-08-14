@@ -42,7 +42,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///multi walker shared memory buffer
   struct DTAAMultiWalkerMem : public Resource
   {
-    ///dist displ for distances and displacements, host only but pinned
+    /** dist displ for distances and displacements, host only but pinned, [nw][total_size] + [nw][3][total_size]
+     * total_size counts the lower triangle with the diagonal included and each row is padded to alightment
+     */
     Vector<RealType, PinnedAlignedAllocator<RealType>> nw_dist_displs_pool;
     ///dist displ for temporary and old pairs
     Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
@@ -151,19 +153,19 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
     nw_new_old_dist_displ.resize(nw * 2 * stride_size);
-    auto& mw_pool = mw_mem.nw_dist_displs_pool;
-    mw_pool.resize(nw * total_size * (1 + D));
+    auto& mw_r_dr = mw_mem.nw_dist_displs_pool;
+    mw_r_dr.resize(nw * total_size * (1 + D));
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
 
       dt.distances_.resize(N_targets);
       dt.displacements_.resize(N_targets);
-      auto walker_pool_ptr = mw_pool.data() + total_size * (1 + D) * iw;
+      auto walker_pool_ptr = mw_r_dr.data() + total_size * (1 + D) * iw;
       for (int i = 0; i < N_targets; ++i)
       {
-        dt.distances_[i].attachReference(walker_pool_ptr + compute_size(i), i);
-        dt.displacements_[i].attachReference(i, total_size, walker_pool_ptr + total_size + compute_size(i));
+        dt.distances_[i].attachReference(mw_r_dr.data() + total_size * iw + compute_size(i), i);
+        dt.displacements_[i].attachReference(i, total_size, mw_r_dr.data() + total_size * nw + total_size * D * iw + compute_size(i));
       }
 
       dt.temp_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * iw, Ntargets_padded);
@@ -212,19 +214,61 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
     // multi walker resource must have been acquired;
     assert(dt_leader.mw_mem_);
-    auto& mw_mem      = *dt_leader.mw_mem_;
-    auto& pset_leader = p_list.getLeader();
 
     ScopedTimer local_timer(evaluate_timer_);
-    const size_t nw = dt_list.size();
+    const size_t nw         = dt_list.size();
+    const size_t total_size = compute_size(N_targets);
+
+    auto& mw_mem      = *dt_leader.mw_mem_;
+    auto& mw_r_dr     = mw_mem.nw_dist_displs_pool;
+    auto& rsoa_dev_list = mw_mem.rsoa_dev_list;
+    rsoa_dev_list.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& P  = p_list[iw];
-      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
-      for (int iat = 1; iat < N_targets; ++iat)
-        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(),
-                                               dt.distances_[iat].data(), dt.displacements_[iat], 0, iat, iat);
+      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
+      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
+    }
+
+    const auto N_local  = N_targets;
+    const auto N_padded = Ntargets_padded;
+    const int ChunkSizePerTeam = 128;
+    const int num_teams        = (N_targets + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+
+    auto* mw_r_dr_ptr = mw_r_dr.data();
+    auto* rsoa_dev_list_ptr     = rsoa_dev_list.data();
+
+    {
+      ScopedTimer offload(offload_timer_);
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
+                        map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list.size()]) \
+                        map(from: mw_r_dr_ptr[:mw_r_dr.size()])")
+      for (int iw = 0; iw < nw; ++iw)
+        for (int team_id = 0; team_id < num_teams; team_id++)
+        {
+          auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
+          const int first = ChunkSizePerTeam * team_id;
+          const int team_last = (first + ChunkSizePerTeam) > N_local ? N_local : first + ChunkSizePerTeam;
+
+          for (int iat = 1; iat < N_local; ++iat)
+          {
+            const int last  = std::min(iat, team_last);
+            if (last <= first) continue;
+
+            const size_t offset = compute_size(iat);
+            auto* r_iw_ptr  = mw_r_dr_ptr + total_size * iw + offset;
+            auto* dr_iw_ptr = mw_r_dr_ptr + total_size * nw + total_size * D * iw + offset;
+
+            T pos[D];
+            for (int idim = 0; idim < D; idim++)
+              pos[idim] = source_pos_ptr[iat + N_padded * idim];
+
+            PRAGMA_OFFLOAD("omp parallel for")
+            for (int iel = first; iel < last; iel++)
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, N_padded, r_iw_ptr, dr_iw_ptr, total_size,
+                                                            iel, iat);
+          }
+        }
     }
   }
 
