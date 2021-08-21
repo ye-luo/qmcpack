@@ -372,6 +372,20 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
     timer<double>(M, N, 'T', i, 'n');
     timer<double>(M, N, 'T', i, 'b');
   }
+
+
+  std::cout << std::endl;
+  
+  // Matrix size test
+  for(int i = 100; i <= 1000; i += 100)
+    {
+      int n = i;
+      int m = i;
+      std::cout << "Variable Matrix size: M = " << m << " N = " << n << std::endl;
+      timer<double>(m, n, 'T', 100, 'n');
+      timer<double>(m, n, 'T', 100, 'b');
+    }
+  
   // Non-batched test
   std::cout << "Testing TRANS gemv" << std::endl;
   test_gemv<float>(M, N, 'T');
