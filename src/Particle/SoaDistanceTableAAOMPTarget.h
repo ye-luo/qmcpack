@@ -16,9 +16,7 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "DistanceTableData.h"
-#include "CPU/SIMD/algorithm.hpp"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPAlignedAllocator.hpp"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
 
@@ -42,10 +40,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///multi walker shared memory buffer
   struct DTAAMultiWalkerMem : public Resource
   {
+    /** dist displ for distances and displacements, [nw][total_size] + [nw][3][total_size]
+     * total_size counts the lower triangle with the diagonal included and each row is padded to alightment
+     */
+    Vector<RealType, OffloadPinnedAllocator<RealType>> nw_dist_displs_pool;
     ///dist displ for temporary and old pairs
-    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
+    Vector<RealType, OffloadPinnedAllocator<RealType>> nw_new_old_dist_displ;
 
-    Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list;
+    Vector<const RealType*, OffloadPinnedAllocator<const RealType*>> rsoa_dev_list;
 
     DTAAMultiWalkerMem() : Resource("DTAAMultiWalkerMem") {}
 
@@ -62,6 +64,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
         Ntargets_padded(getAlignedSize<T>(N_targets)),
         offload_timer_(
             *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
+        memcpy_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::memcpy_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
                                                    timer_level_fine)),
         move_timer_(
@@ -182,6 +186,85 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     for (int iat = 1; iat < N_targets; ++iat)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
                                              displacements_[iat], 0, iat, iat);
+  }
+
+  inline void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list) const override
+  {
+    assert(this == &dt_list.getLeader());
+    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    // multi walker resource must have been acquired;
+    assert(dt_leader.mw_mem_);
+
+    ScopedTimer local_timer(evaluate_timer_);
+    const size_t nw         = dt_list.size();
+    const size_t total_size = compute_size(N_targets);
+
+    auto& mw_r_dr       = dt_leader.mw_mem_->nw_dist_displs_pool;
+    auto& rsoa_dev_list = dt_leader.mw_mem_->rsoa_dev_list;
+    mw_r_dr.resize((D + 1) * nw * total_size);
+    rsoa_dev_list.resize(nw);
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
+      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
+    }
+
+    const auto N_local         = N_targets;
+    const auto N_padded        = Ntargets_padded;
+    const int ChunkSizePerTeam = 128;
+    const int num_teams        = (N_targets + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+
+    auto* mw_r_dr_ptr       = mw_r_dr.data();
+    auto* rsoa_dev_list_ptr = rsoa_dev_list.data();
+
+    {
+      ScopedTimer offload(offload_timer_);
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
+                        map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list.size()]) \
+                        map(always, from: mw_r_dr_ptr[:mw_r_dr.size()])")
+      for (int iw = 0; iw < nw; ++iw)
+        for (int team_id = 0; team_id < num_teams; team_id++)
+        {
+          auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
+          const int first      = ChunkSizePerTeam * team_id;
+          const int team_last  = (first + ChunkSizePerTeam) > N_local ? N_local : first + ChunkSizePerTeam;
+
+          for (int iat = 1; iat < N_local; ++iat)
+          {
+            const int last = std::min(iat, team_last);
+            if (last <= first)
+              continue;
+
+            const size_t offset = compute_size(iat);
+            auto* r_iw_ptr      = mw_r_dr_ptr + total_size * (D + 1) * iw + offset;
+            auto* dr_iw_ptr     = mw_r_dr_ptr + total_size * (D + 1) * iw + total_size + offset;
+
+            T pos[D];
+            for (int idim = 0; idim < D; idim++)
+              pos[idim] = source_pos_ptr[iat + N_padded * idim];
+
+            PRAGMA_OFFLOAD("omp parallel for")
+            for (int iel = first; iel < last; iel++)
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, N_padded, r_iw_ptr, dr_iw_ptr,
+                                                            total_size, iel, iat);
+          }
+        }
+    }
+
+    {
+      ScopedTimer offload(memcpy_timer_);
+      for (int iw = 0; iw < nw; ++iw)
+      {
+        size_t copy_size_per_walker = (D + 1) * total_size;
+        auto& dt                    = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+        auto& memory_pool           = dt.memory_pool_;
+        assert(copy_size_per_walker == memory_pool.size());
+        auto* r_dr_iw = mw_r_dr_ptr + total_size * (D + 1) * iw;
+        std::copy_n(r_dr_iw, copy_size_per_walker, memory_pool.data());
+      }
+    }
   }
 
   ///evaluate the temporary pair relations
@@ -413,6 +496,8 @@ private:
   const int Ntargets_padded;
   /// timer for offload portion
   NewTimer& offload_timer_;
+  /// timer for mw_evaluate memory copy
+  NewTimer& memcpy_timer_;
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
   /// timer for move()
