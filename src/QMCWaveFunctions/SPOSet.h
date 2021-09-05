@@ -444,16 +444,16 @@ public:
 
   /** acquire a shared resource from collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
 
   /** return a shared resource to collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const {}
 
   /** make a clone of itself
    * every derived class must implement this to have threading working correctly.
    */
-  virtual SPOSet* makeClone() const;
+  virtual std::unique_ptr<SPOSet> makeClone() const;
 
   /** Used only by cusp correction in AOS LCAO.
    * Ye: the SoA LCAO moves all this responsibility to the builder.

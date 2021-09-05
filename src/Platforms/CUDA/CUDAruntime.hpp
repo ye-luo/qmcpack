@@ -8,21 +8,22 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-// -*- C++ -*-
-/** @file
- */
-#ifndef QMCPLUSPLUS_OMPTARGET_ALIGNED_ALLOCATOR_H
-#define QMCPLUSPLUS_OMPTARGET_ALIGNED_ALLOCATOR_H
 
 
-#include "OMPallocator.hpp"
-#include "PinnedAllocator.h"
+#ifndef QMCPLUSPLUS_CUDA_RUNTIME_H
+#define QMCPLUSPLUS_CUDA_RUNTIME_H
 
-namespace qmcplusplus
-{
-  template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-} // namespace qmcplusplus
+#include <cstddef>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
+#include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
+
+#include "CUDAerror.h"
+
+size_t getCUDAdeviceFreeMem();
+
 #endif
