@@ -13,12 +13,22 @@ if(ENABLE_OFFLOAD)
 
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-  set(SRC_DIR omptarget)
-  set(UTEST_EXE test_${SRC_DIR})
-  set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+  set(UTEST_EXE test_omptarget_runtime)
+  set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
   add_executable(${UTEST_EXE} test_vector.cpp test_math.cpp test_deep_copy.cpp test_class_member.cpp
-                              test_runtime_mem.cpp test_ompBLAS.cpp)
+                              test_runtime_mem.cpp)
+  target_link_libraries(${UTEST_EXE} platform_device catch_main)
+  if(USE_OBJECT_TARGET)
+    target_link_libraries(${UTEST_EXE} platform_omptarget)
+  endif()
+
+  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+
+  set(UTEST_EXE test_omptarget_BLAS)
+  set(UTEST_NAME deterministic-unit_${UTEST_EXE})
+
+  add_executable(${UTEST_EXE} test_ompBLAS.cpp)
   target_link_libraries(${UTEST_EXE} platform_device catch_main containers Math::BLAS_LAPACK utilities_for_test)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} platform_omptarget)
