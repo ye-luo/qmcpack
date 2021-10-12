@@ -312,11 +312,44 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
         }
     }
 
-    if (modes_ & DTModes::NEED_TEMP_DATA_ON_HOST)
+    PRAGMA_OFFLOAD("omp target update depend(inout: r_dr_ptr[:nw_new_old_dist_displ.size()]) \
+                    from(r_dr_ptr[:nw_new_old_dist_displ.size()])")
+
+    DistRow r_saved;
+    DisplRow dr_saved;
+    r_saved.resize(num_targets_);
+    dr_saved.resize(num_targets_);
+    for (int iw = 0; iw < nw; ++iw)
     {
-      PRAGMA_OFFLOAD("omp target update nowait depend(inout: r_dr_ptr[:nw_new_old_dist_displ.size()]) \
-                      from(r_dr_ptr[:nw_new_old_dist_displ.size()])")
+      auto& P = p_list[iw];
+      auto& dt = static_cast<SoaDistanceTableAAOMPTarget&>(dt_list[iw]);
+      r_saved = dt.temp_r_;
+      dr_saved = dt.temp_dr_;
+
+      DTD_BConds<T, D, SC>::computeDistances(rnew_list[iw], P.getCoordinates().getAllParticlePos(), dt.temp_r_.data(), dt.temp_dr_, 0,
+                                             num_targets_, iat);
+
+      for(int ip = 0; ip < num_targets_; ip++)
+        if (std::abs(r_saved[ip] - dt.temp_r_[ip]) > 1e-6 || dot(dr_saved[ip] - dt.temp_dr_[ip], dr_saved[ip] - dt.temp_dr_[ip]) > 1e-6)
+        {
+          std::ostringstream msg;
+          msg << "iw = " << iw << " ip = " << ip << ", rnew " << rnew_list[iw]
+              << " source pos = " << P.getCoordinates().getAllParticlePos()[ip]
+              << " device r " << r_saved[ip] << " dr " << dr_saved[ip]
+              << " host r " << dt.temp_r_[ip] << " dr " << dt.temp_dr_[ip] << std::endl;
+        }
+      // set up old_r_ and old_dr_ for moves may get accepted.
+      if (prepare_old)
+      {
+        //recompute from scratch
+        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), dt.old_r_.data(), dt.old_dr_,
+                                               0, num_targets_, iat);
+        dt.old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
+      }
     }
+
+    PRAGMA_OFFLOAD("omp target update nowait depend(inout: r_dr_ptr[:nw_new_old_dist_displ.size()]) \
+                    to(r_dr_ptr[:nw_new_old_dist_displ.size()])")
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
