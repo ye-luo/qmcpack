@@ -31,5 +31,14 @@ sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                const int ndelay,
                                T* V_gpu,
                                const T* Ainv);
+
+template<typename T, typename TMAT, typename Index_t>
+std::complex<T> computeLogDet_sycl(sycl::queue& aq,
+                                   int n,
+                                   int lda,
+                                   const TMAT* restrict a,
+                                   const Index_t* restrict pivot,
+                                   const std::vector<cl::sycl::event>& dependencies={});
+
 }
 #endif
