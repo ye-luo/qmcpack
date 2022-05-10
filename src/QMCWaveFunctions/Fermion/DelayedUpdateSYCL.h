@@ -20,6 +20,8 @@
 #include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
 #include "DiracMatrix.h"
 #include "PrefetchedRange.h"
+#include "syclSolverInverter.hpp"
+
 //#define SYCL_BLOCKING
 
 namespace qmcplusplus
@@ -51,6 +53,8 @@ class DelayedUpdateSYCL
   int delay_count;
 
   DiracMatrix<T_FP> host_inverter_;
+
+  syclSolverInverter<T_FP> sycl_inverter_;
 
   // the range of prefetched_Ainv_rows
   PrefetchedRange prefetched_range;
@@ -102,8 +106,17 @@ public:
   template<typename TREAL>
   void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
-    host_inverter_.invert_transpose(logdetT, Ainv, log_value);
-    initializeInv(Ainv);
+    clearDelayCount();
+
+    if(true)
+    {
+        host_inverter_.invert_transpose(logdetT, Ainv, log_value);
+        m_queue_.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T)).wait();
+    }
+    else
+    {
+        sycl_inverter_.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value, m_queue_);
+    }
   }
 
   /** initialize internal objects when Ainv is refreshed
@@ -215,11 +228,11 @@ public:
 
 #ifdef SYCL_BLOCKING
       syclBLAS::gemm(m_queue_, 'N', 'N', norb, norb, delay_count, -cone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv,
-                     cone, Ainv_gpu.data(), norb, {u_event, temp_v_event})
+                     cone, Ainv_gpu.data(), norb, {u_event})
           .wait();
 #else
       ainv_event_ = syclBLAS::gemm(m_queue_, 'N', 'N', norb, norb, delay_count, -cone, U_gpu.data(), norb,
-                                   temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {u_event, temp_v_event});
+                                   temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {u_event});
 #endif
 
       clearDelayCount();
