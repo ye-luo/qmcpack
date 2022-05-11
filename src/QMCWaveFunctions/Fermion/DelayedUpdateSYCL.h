@@ -52,8 +52,6 @@ class DelayedUpdateSYCL
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
-  DiracMatrix<T_FP> host_inverter_;
-
   syclSolverInverter<T_FP> sycl_inverter_;
 
   // the range of prefetched_Ainv_rows
@@ -108,15 +106,7 @@ public:
   {
     clearDelayCount();
 
-    if(true)
-    {
-        host_inverter_.invert_transpose(logdetT, Ainv, log_value);
-        m_queue_.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T)).wait();
-    }
-    else
-    {
-        sycl_inverter_.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value, m_queue_);
-    }
+    sycl_inverter_.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value, m_queue_);
   }
 
   /** initialize internal objects when Ainv is refreshed

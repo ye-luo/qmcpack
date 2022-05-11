@@ -96,7 +96,7 @@ std::complex<T> computeLogDet_sycl(sycl::queue& aq,
                                    const Index_t* restrict pivot,
                                    const std::vector<cl::sycl::event>& dependencies)
   {
-    constexpr size_t COLBS=32;
+    constexpr size_t COLBS=128;
 
     std::complex<T> result{};
     {
