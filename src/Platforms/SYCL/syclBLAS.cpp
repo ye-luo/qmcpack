@@ -239,6 +239,24 @@ template sycl::event transpose(sycl::queue& q,
                               int ldb,
                               const std::vector<sycl::event>& events);
 
+template sycl::event transpose(sycl::queue& q,
+                              const std::complex<float>* restrict in,
+                              int m,
+                              int lda,
+                              std::complex<double>* restrict out,
+                              int n,
+                              int ldb,
+                              const std::vector<sycl::event>& events);
+
+template sycl::event transpose(sycl::queue& q,
+                              const std::complex<double>* restrict in,
+                              int m,
+                              int lda,
+                              std::complex<double>* restrict out,
+                              int n,
+                              int ldb,
+                              const std::vector<sycl::event>& events);
+
 //copy_n for mixed precision
 template <typename T1, typename T2>
 sycl::event copy_n(sycl::queue &aq,
@@ -259,6 +277,12 @@ template sycl::event copy_n(sycl::queue &aq,
                             const double* restrict VA,
                             size_t array_size,
                             float* restrict VC,
+                            const std::vector<sycl::event>& events);
+
+template sycl::event copy_n(sycl::queue &aq,
+                            const std::complex<double>* restrict VA,
+                            size_t array_size,
+                            std::complex<float>* restrict VC,
                             const std::vector<sycl::event>& events);
 
 } // namespace syclBLAS
