@@ -20,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 template<typename T>
 sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                const std::vector<cl::sycl::event>& dependencies,
@@ -38,7 +37,7 @@ std::complex<T> computeLogDet_sycl(sycl::queue& aq,
                                    int lda,
                                    const TMAT* a,
                                    const INDEX* pivot,
-                                   const std::vector<cl::sycl::event>& dependencies={});
+                                   const std::vector<cl::sycl::event>& dependencies = {});
 
-}
+} // namespace qmcplusplus
 #endif

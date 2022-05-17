@@ -20,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 template<typename T, typename T_FP>
 void test_inverse(const std::int64_t N)
 {
@@ -32,7 +31,7 @@ void test_inverse(const std::int64_t N)
   Matrix<T> m_invT(N, N);
   Matrix<T> m_invT_CPU(N, N);
   Matrix<T, SYCLAllocator<T>> m_invGPU;
-  m_invGPU.resize(N,N);
+  m_invGPU.resize(N, N);
 
   std::complex<double> log_value, log_value_cpu;
   testing::MakeRngSpdMatrix<T> makeRngSpdMatrix{};
@@ -52,14 +51,14 @@ void test_inverse(const std::int64_t N)
 
 TEST_CASE("OmpSYCL syclSolverInverter", "[SYCL]")
 {
-  const int N           = 911;
+  const int N = 911;
 
 #ifdef MIXED_PRECISION
   std::cout << "Testing Inverse for mixed precision " << std::endl;
-  test_inverse<float,double>(N);
+  test_inverse<float, double>(N);
 #else
   std::cout << "Testing Inverse for double double " << std::endl;
-  test_inverse<double,double>(N);
+  test_inverse<double, double>(N);
 #endif
 }
 

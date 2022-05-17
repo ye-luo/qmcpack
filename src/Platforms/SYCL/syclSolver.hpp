@@ -16,10 +16,10 @@
 
 namespace qmcplusplus
 {
-    namespace syclSolver
-    {
-        using namespace oneapi::mkl::lapack;
-    }
+namespace syclSolver
+{
+using namespace oneapi::mkl::lapack;
 }
+} // namespace qmcplusplus
 
 #endif

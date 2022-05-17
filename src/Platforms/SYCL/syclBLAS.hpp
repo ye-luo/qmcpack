@@ -66,8 +66,8 @@ sycl::event transpose(sycl::queue& q,
                       int ldb,
                       const std::vector<sycl::event>& events = {});
 
-template <typename T1, typename T2>
-sycl::event copy_n(sycl::queue &aq,
+template<typename T1, typename T2>
+sycl::event copy_n(sycl::queue& aq,
                    const T1* VA,
                    size_t array_size,
                    T2* VC,

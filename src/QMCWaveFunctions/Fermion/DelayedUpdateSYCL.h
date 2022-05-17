@@ -26,7 +26,6 @@
 
 namespace qmcplusplus
 {
-
 /** implements delayed update on Intel GPU using SYCL
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
