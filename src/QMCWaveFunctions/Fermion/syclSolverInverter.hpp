@@ -30,7 +30,7 @@ class syclSolverInverter
   /// scratch memory for cusolverDN
   Matrix<T_FP, SYCLAllocator<T_FP>> Mat1_gpu;
   /// pivot array + info
-  Vector<std::int64_t, SYCLHostAllocator<std::int64_t>> ipiv;
+  Vector<std::int64_t, SYCLAllocator<std::int64_t>> ipiv;
   /// workspace
   Vector<T_FP, SYCLAllocator<T_FP>> workspace;
   std::int64_t getrf_ws = 0;
@@ -72,8 +72,8 @@ public:
                                        Ainv_gpu.cols(), {c_event});
     try
     {
-      c_event = syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws,
-                                  {t_event});
+      syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws,
+                        {t_event}).wait();
     }
     catch (cl::sycl::exception const& ex)
     {
@@ -82,7 +82,7 @@ public:
       abort();
     }
 
-    log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Ainv_gpu.cols(), Ainv_gpu.data(), ipiv.data(), {c_event});
+    log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Ainv_gpu.cols(), Ainv_gpu.data(), ipiv.data());
 
     c_event = syclSolver::getri(m_queue, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getri_ws);
 
@@ -111,8 +111,8 @@ public:
     //getrf (LU) -> getri (inverse)
     try
     {
-      c_event = syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws,
-                                  {t_event});
+      syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws,
+                        {t_event}).wait();
     }
     catch (cl::sycl::exception const& ex)
     {
@@ -121,7 +121,7 @@ public:
       abort();
     }
 
-    log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Mat1_gpu.cols(), Mat1_gpu.data(), ipiv.data(), {c_event});
+    log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Mat1_gpu.cols(), Mat1_gpu.data(), ipiv.data());
 
     c_event = syclSolver::getri(m_queue, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getri_ws);
 
