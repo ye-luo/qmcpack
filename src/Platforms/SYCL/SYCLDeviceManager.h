@@ -24,9 +24,10 @@ namespace qmcplusplus
 {
 struct syclDeviceInfo
 {
-  sycl::context context;
-  sycl::device device;
-  omp_interop_t interop;
+  sycl::context context_;
+  sycl::device device_;
+  sycl::queue* queue_ = nullptr;
+  omp_interop_t interop_;
 };
 
 /** SYCL device manager

@@ -41,11 +41,14 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
     if(id == sycl_default_device_num)
     {
       int result;
-      default_device_queue.reset(static_cast<sycl::queue *> (omp_get_interop_ptr(interop, omp_ipr_targetsync, &result)));
+      sycl::queue* omp_queue = static_cast<sycl::queue *>(omp_get_interop_ptr(interop, omp_ipr_targetsync, &result));
       if(result != omp_irc_success)
         throw std::runtime_error("SYCLDeviceManager::SYCLDeviceManager fail to obtain sycl::queue by interop");
+
+      default_device_queue.reset(new sycl::queue(*omp_queue));
+      visible_devices[id].queue_ = omp_queue;
     }
-    visible_devices[id].interop=interop;
+    visible_devices[id].interop_ = interop;
   } 
 
 #else
@@ -92,8 +95,8 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
       default_device_num = sycl_default_device_num;
     else if (default_device_num != sycl_default_device_num)
       throw std::runtime_error("Inconsistent assigned SYCL devices with the previous record!");
-    default_device_queue = std::make_unique<sycl::queue>(visible_devices[sycl_default_device_num].context,
-                                                         visible_devices[sycl_default_device_num].device);
+    default_device_queue = std::make_unique<sycl::queue>(visible_devices[sycl_default_device_num].context_,
+                                                         visible_devices[sycl_default_device_num].device_);
   }
 #endif
 }
