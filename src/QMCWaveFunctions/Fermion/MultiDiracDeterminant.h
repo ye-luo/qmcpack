@@ -114,6 +114,7 @@ public:
 
     OffloadVector<ValueType> curRatio_list;
     OffloadVector<ValueType> inv_curRatio_list;
+    std::vector<bool> mw_curRatio_below_tol;
 
     OffloadVector<ValueType> det0_grad_list;
     OffloadVector<GradType> ratioGradRef_list;
@@ -270,25 +271,37 @@ public:
                      std::vector<size_t>& C2nodes_sorted);
 
   /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
+   *@return true if the current ratio of the reference determinant is below tolerance
    *@param P particle set which provides the positions
    *@param iat the index of the moved electron
    *@param refPtcl if given, the id of the reference particle in virtual moves
    */
-  void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
+  bool evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
   /// multi walker version of evaluateDetsForPtclMove
   void static mw_evaluateDetsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                          const RefVectorWithLeader<ParticleSet>& P_list,
                                          int iat);
 
-  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
-  void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+  /** evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
+   *@return true if the current ratio of the reference determinant is below tolerance
+   */
+  bool evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
   /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
   void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                                  const RefVectorWithLeader<ParticleSet>& P_list,
                                                  int iat,
                                                  UnpinnedOffloadMatrix<ValueType>& mw_grads);
-  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
-  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
+
+  /// return curRatio below tolerance status of all walkers
+  static std::vector<bool>& mw_getCurRatioBelowTol(const RefVectorWithLeader<MultiDiracDeterminant>& det_list)
+  {
+    return det_list.getLeader().mw_res_->mw_curRatio_below_tol;
+  }
+
+  /** evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+   *@return true if the current ratio of the reference determinant is below tolerance
+   */
+  bool evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
 
 
   /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
@@ -597,6 +610,9 @@ private:
   static constexpr size_t MaxSmallDet = 5;
 
   std::unique_ptr<MultiDiracDetMultiWalkerResource> mw_res_;
+
+  /// tolerance for the ratio of the reference determinant during p-by-p move
+  const RealType ref_det_ratio_norm_tol_ = std::numeric_limits<double>::epsilon();
 };
 
 

@@ -477,14 +477,17 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
         TpsiM_list_devptr[iw][i * TpsiM_cols + WorkingIndex] = psiM_list_ptr[iw][i + psiM_cols * WorkingIndex];
   }
 
+  auto& mw_curRatio_below_tol = det_leader.mw_res_->mw_curRatio_below_tol;
+  mw_curRatio_below_tol.resize(nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
     det.curRatio               = curRatio_list_ptr[iw];
+    mw_curRatio_below_tol[iw]  = std::norm(det.curRatio) < det.ref_det_ratio_norm_tol_;
   }
 }
 
-void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl)
+bool MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl)
 {
   ScopedTimer local_timer(evaluateDetsForPtclMove_timer);
 
@@ -512,6 +515,8 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
       psiV_temp[i] = psiV[*(it++)];
     auto ratio_old_ref_det = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
     curRatio               = ratio_old_ref_det;
+    if (std::norm(curRatio) < ref_det_ratio_norm_tol_)
+      return true;
     InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, ratio_old_ref_det);
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
@@ -521,9 +526,10 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
   // check comment above
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  return false;
 }
 
-void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat)
+bool MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat)
 {
   ScopedTimer local_timer(evaluateDetsAndGradsForPtclMove_timer);
   UpdateMode = ORB_PBYP_PARTIAL;
@@ -553,6 +559,8 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
       it++;
     }
     curRatio = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+    if (std::norm(curRatio) < ref_det_ratio_norm_tol_)
+      return true;
     InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
@@ -578,9 +586,10 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
   // check comment above
   for (int i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  return false;
 }
 
-void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat)
+bool MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat)
 {
   assert(P.isSpinor() == is_spinor_);
   ScopedTimer local_timer(evaluateDetsAndGradsForPtclMove_timer);
@@ -611,7 +620,9 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
       ratioSpinGradRef += psiMinv_temp(i, WorkingIndex) * dspin_psiV[*it];
       it++;
     }
-    curRatio                                          = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+    curRatio = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+    if (std::norm(curRatio) < ref_det_ratio_norm_tol_)
+      return true;
     new_spingrads(ReferenceDeterminant, WorkingIndex) = ratioSpinGradRef / curRatio;
     InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
     for (size_t i = 0; i < NumOrbitals; i++)
@@ -653,6 +664,8 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   // check comment above
   for (int i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+
+  return false;
 }
 
 void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
@@ -869,10 +882,14 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM_list_devptr[iw][i * TpsiM_num_cols + WorkingIndex] = psiM_list_ptr[iw][i + psiM_num_cols * WorkingIndex];
   }
+
+  auto& mw_curRatio_below_tol = det_leader.mw_res_->mw_curRatio_below_tol;
+  mw_curRatio_below_tol.resize(nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
     det.curRatio               = curRatio_list[iw];
+    mw_curRatio_below_tol[iw]  = std::norm(det.curRatio) < det.ref_det_ratio_norm_tol_;
   }
 }
 

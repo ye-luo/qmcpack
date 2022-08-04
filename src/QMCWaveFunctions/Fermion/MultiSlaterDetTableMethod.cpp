@@ -165,7 +165,14 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl(Par
   const int det_id = getDetID(iat);
 
   if (newpos)
-    Dets[det_id]->evaluateDetsAndGradsForPtclMove(P, iat);
+  {
+    const bool ratio_norm_below_tol = Dets[det_id]->evaluateDetsAndGradsForPtclMove(P, iat);
+    if (ratio_norm_below_tol)
+    {
+      g_at = GradType(0);
+      return PsiValueType(0);
+    }
+  }
   else
     Dets[det_id]->evaluateGrads(P, iat);
 
@@ -241,9 +248,9 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   auto& mw_grads = det_leader.mw_res_->mw_grads;
   mw_grads.resize(3 * nw, ndets);
   if (newpos)
-    det_leader.Dets[det_id]->mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat, mw_grads);
+    MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat, mw_grads);
   else
-    det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat, mw_grads);
+    MultiDiracDeterminant::mw_evaluateGrads(det_list, P_list, iat, mw_grads);
 
   auto& det_value_ptr_list = det_leader.mw_res_->det_value_ptr_list;
   det_value_ptr_list.resize(nw);
@@ -288,13 +295,20 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     }
   }
 
+  const auto& mw_curRatio_below_tol = MultiDiracDeterminant::mw_getCurRatioBelowTol(det_list);
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    auto psi_inv    = static_cast<ValueType>(PsiValueType(1.0) / psi_list[iw]);
-    grad_now[iw][0] = grad_now_list[iw * 3 + 0] * psi_inv;
-    grad_now[iw][1] = grad_now_list[iw * 3 + 1] * psi_inv;
-    grad_now[iw][2] = grad_now_list[iw * 3 + 2] * psi_inv;
-  }
+    if (newpos && mw_curRatio_below_tol[iw])
+    {
+      psi_list[iw] = PsiValueType(0);
+      grad_now[iw] = GradType(0);
+    }
+    else
+    {
+      auto psi_inv    = static_cast<ValueType>(PsiValueType(1.0) / psi_list[iw]);
+      grad_now[iw][0] = grad_now_list[iw * 3 + 0] * psi_inv;
+      grad_now[iw][1] = grad_now_list[iw * 3 + 1] * psi_inv;
+      grad_now[iw][2] = grad_now_list[iw * 3 + 2] * psi_inv;
+    }
 }
 
 WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl_no_precompute(ParticleSet& P,
@@ -305,7 +319,14 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl_no_
   const int det_id = getDetID(iat);
 
   if (newpos)
-    Dets[det_id]->evaluateDetsAndGradsForPtclMove(P, iat);
+  {
+    const bool ratio_norm_below_tol = Dets[det_id]->evaluateDetsAndGradsForPtclMove(P, iat);
+    if (ratio_norm_below_tol)
+    {
+      g_at = GradType(0);
+      return PsiValueType(0);
+    }
+  }
   else
     Dets[det_id]->evaluateGrads(P, iat);
 
@@ -492,43 +513,52 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl(Partic
 {
   const int det_id = getDetID(iat);
 
-  Dets[det_id]->evaluateDetsForPtclMove(P, iat);
+  const bool ratio_norm_below_tol = Dets[det_id]->evaluateDetsForPtclMove(P, iat);
+  if (ratio_norm_below_tol)
+    return PsiValueType(0);
+  else
+  {
+    const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
-  const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+    PsiValueType psi = 0;
+    // This function computes
+    // psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+    // Since only one electron group is moved at the time, identified by det_id, We precompute:
+    // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+    for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
+      psi += detValues0[i] * C_otherDs[det_id][i];
 
-  PsiValueType psi = 0;
-  // This function computes
-  // psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
-  // Since only one electron group is moved at the time, identified by det_id, We precompute:
-  // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
-  for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
-    psi += detValues0[i] * C_otherDs[det_id][i];
-
-  return psi;
+    return psi;
+  }
 }
 
 
 WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl_no_precompute(ParticleSet& P, int iat)
 {
   const int det_id = getDetID(iat);
-  Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
-  const size_t* restrict det0                = (*C2node)[det_id].data();
-  const ValueType* restrict cptr             = C->data();
-  const size_t nc                            = C->size();
-
-  PsiValueType psi = 0;
-  for (size_t i = 0; i < nc; ++i)
+  const bool ratio_norm_below_tol = Dets[det_id]->evaluateDetsForPtclMove(P, iat);
+  if (ratio_norm_below_tol)
+    return PsiValueType(0);
+  else
   {
-    ValueType t = cptr[i];
-    for (size_t id = 0; id < Dets.size(); id++)
-      if (id != det_id)
-        t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-    t *= detValues0[det0[i]];
-    psi += t;
+    const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
+    const size_t* restrict det0                = (*C2node)[det_id].data();
+    const ValueType* restrict cptr             = C->data();
+    const size_t nc                            = C->size();
+
+    PsiValueType psi = 0;
+    for (size_t i = 0; i < nc; ++i)
+    {
+      ValueType t = cptr[i];
+      for (size_t id = 0; id < Dets.size(); id++)
+        if (id != det_id)
+          t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
+      t *= detValues0[det0[i]];
+      psi += t;
+    }
+    return psi;
   }
-  return psi;
 }
 
 // use ci_node for this routine only
@@ -574,7 +604,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     det_list.push_back(*det.Dets[det_id]);
   }
 
-  det_leader.Dets[det_id]->mw_evaluateDetsForPtclMove(det_list, P_list, iat);
+  MultiDiracDeterminant::mw_evaluateDetsForPtclMove(det_list, P_list, iat);
 
   auto& det_value_ptr_list = det_leader.mw_res_->det_value_ptr_list;
   det_value_ptr_list.resize(nw);
@@ -606,12 +636,16 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     }
   }
 
+  const auto& mw_curRatio_below_tol = MultiDiracDeterminant::mw_getCurRatioBelowTol(det_list);
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
-    det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
-    ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
-  }
+    if (mw_curRatio_below_tol[iw])
+      ratios[iw] = PsiValueType(0);
+    else
+    {
+      auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
+      det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
+      ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
+    }
 }
 
 void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -622,30 +656,35 @@ void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std
 
   for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
   {
-    Dets[det_id]->evaluateDetsForPtclMove(VP, iat, VP.refPtcl);
-    const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
-
-    PsiValueType psiNew(0);
-    if (use_pre_computing_)
-      for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
-        psiNew += detValues0[i] * C_otherDs[det_id][i];
+    const bool ratio_norm_below_tol = Dets[det_id]->evaluateDetsForPtclMove(VP, iat, VP.refPtcl);
+    if (ratio_norm_below_tol)
+      ratios[iat] = PsiValueType(0);
     else
     {
-      const size_t* restrict det0    = (*C2node)[det_id].data();
-      const ValueType* restrict cptr = C->data();
-      const size_t nc                = C->size();
+      const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
-      for (size_t i = 0; i < nc; ++i)
+      PsiValueType psiNew(0);
+      if (use_pre_computing_)
+        for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
+          psiNew += detValues0[i] * C_otherDs[det_id][i];
+      else
       {
-        ValueType t = cptr[i];
-        for (size_t id = 0; id < Dets.size(); id++)
-          if (id != det_id)
-            t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-        t *= detValues0[det0[i]];
-        psiNew += t;
+        const size_t* restrict det0    = (*C2node)[det_id].data();
+        const ValueType* restrict cptr = C->data();
+        const size_t nc                = C->size();
+
+        for (size_t i = 0; i < nc; ++i)
+        {
+          ValueType t = cptr[i];
+          for (size_t id = 0; id < Dets.size(); id++)
+            if (id != det_id)
+              t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
+          t *= detValues0[det0[i]];
+          psiNew += t;
+        }
       }
+      ratios[iat] = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
     }
-    ratios[iat] = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
   }
 }
 

@@ -409,6 +409,10 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 */
 void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
+  // a move with curRatio below tolerance should be rejected
+  if (std::norm(curRatio) < ref_det_ratio_norm_tol_)
+    throw std::logic_error(
+        "BUG!! MultiDiracDeterminant::acceptMove should not be called when curRatio tolerance check failed!");
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   assert(P.isSpinor() == is_spinor_);
