@@ -353,6 +353,8 @@ void ParticleSet::update(bool skipSK)
   coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  // DistTables evaluate calls are asynchronous. Wait for them before return.
+  PRAGMA_OFFLOAD("omp taskwait")
   if (!skipSK && structure_factor_)
     structure_factor_->updateAllPart(*this);
 
@@ -373,6 +375,8 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
     const auto dt_list(extractDTRefList(p_list, i));
     dts[i]->mw_evaluate(dt_list, p_list);
   }
+  // DistTables mw_evaluate calls are asynchronous. Wait for them before return.
+  PRAGMA_OFFLOAD("omp taskwait")
 
   if (!skipSK && p_leader.structure_factor_)
     for (int iw = 0; iw < p_list.size(); iw++)
@@ -517,6 +521,8 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
   coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  // DistTables evaluate calls are asynchronous. Wait for them before return.
+  PRAGMA_OFFLOAD("omp taskwait")
   if (structure_factor_)
     structure_factor_->updateAllPart(*this);
   //every move is valid
@@ -550,6 +556,8 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
   coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  // DistTables evaluate calls are asynchronous. Wait for them before return.
+  PRAGMA_OFFLOAD("omp taskwait")
   if (structure_factor_)
     structure_factor_->updateAllPart(*this);
   //every move is valid
@@ -591,6 +599,8 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
   coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  // DistTables evaluate calls are asynchronous. Wait for them before return.
+  PRAGMA_OFFLOAD("omp taskwait")
   if (structure_factor_)
     structure_factor_->updateAllPart(*this);
   //every move is valid
@@ -626,6 +636,8 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
 
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  // DistTables evaluate calls are asynchronous. Wait for them before return.
+  PRAGMA_OFFLOAD("omp taskwait")
   if (structure_factor_)
     structure_factor_->updateAllPart(*this);
   //every move is valid
@@ -826,6 +838,8 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
     for (int i = 0; i < DistTables.size(); i++)
       if (DistTables[i]->getModes() & DTModes::NEED_FULL_TABLE_ANYTIME)
         DistTables[i]->evaluate(*this);
+    // DistTables evaluate calls are asynchronous. Wait for them before return.
+    PRAGMA_OFFLOAD("omp taskwait")
   }
 
   active_ptcl_ = -1;

@@ -96,7 +96,8 @@ public:
   ///returns the number of source particles
   inline size_t sources() const { return num_sources_; }
 
-  /** evaluate the full Distance Table
+  /** evaluate the full Distance Table. this function may be implemented asynchronously.
+   * Additional synchroniziation for collecting results should be handled by the caller.
    * @param P the target particle set
    */
   virtual void evaluate(ParticleSet& P) = 0;

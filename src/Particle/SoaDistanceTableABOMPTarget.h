@@ -210,7 +210,7 @@ public:
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(num_targets_*num_teams) \
                         map(to: source_pos_ptr[:num_padded*D]) \
                         map(always, to: target_pos_ptr[:num_targets_*D]) \
-                        map(always, from: r_dr_ptr[:num_targets_*stride_size])")
+                        map(always, from: r_dr_ptr[:num_targets_*stride_size]) nowait")
       for (int iat = 0; iat < num_targets_local; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -341,9 +341,6 @@ public:
         PRAGMA_OFFLOAD(
             "omp target update from(r_dr_ptr[:mw_r_dr.size()]) depend(inout:r_dr_ptr[:mw_r_dr.size()]) nowait")
       }
-      // wait for computing and (optional) transferring back to host.
-      // It can potentially be moved to ParticleSet to fuse multiple similar taskwait
-      PRAGMA_OFFLOAD("omp taskwait")
     }
   }
 
@@ -352,6 +349,8 @@ public:
                            const std::vector<bool>& recompute) const override
   {
     mw_evaluate(dt_list, p_list);
+    // wait for computing and (optional) transferring back to host.
+    PRAGMA_OFFLOAD("omp taskwait")
   }
 
   ///evaluate the temporary pair relations
