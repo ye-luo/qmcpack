@@ -40,6 +40,22 @@ sycl::event gemv(sycl::queue& handle,
                  const std::vector<sycl::event>& events = {});
 
 template<typename T>
+sycl::event gemv_batched(sycl::queue&   handle,
+                         const char          trans,
+                         const syclBLAS_int  m,
+                         const syclBLAS_int  n,
+                         const T*            alpha,
+                         const T**           A,
+                         const syclBLAS_int  lda,
+                         const T**           X,
+                         const syclBLAS_int  incx,
+                         const T*            beta,
+                         T**                 Y,
+                         const syclBLAS_int  incy,
+                         const syclBLAS_int  batch_count,
+                         const std::vector<sycl::event> &events = {});
+
+template<typename T>
 sycl::event gemm(sycl::queue& handle,
                  const char tA,
                  const char tB,
@@ -56,6 +72,37 @@ sycl::event gemm(sycl::queue& handle,
                  const int ldc,
                  const std::vector<sycl::event>& events = {});
 
+template<typename T>
+sycl::event gemm_batched(sycl::queue&   handle,
+                         const char transA,
+                         const char transB,
+                         const syclBLAS_int  m,
+                         const syclBLAS_int  n,
+                         const syclBLAS_int  k,
+                         const T*            alpha,
+                         const T**           A,
+                         const syclBLAS_int  lda,
+                         const T**           B,
+                         const syclBLAS_int  ldb,
+                         const T*            beta,
+                         T**                 C,
+                         const syclBLAS_int  ldc,
+                         const syclBLAS_int  batch_count,
+                         const std::vector<sycl::event> &events = {});
+
+template<typename T>
+sycl::event ger_batched(sycl::queue& handle,
+                        const int       m,
+                        const int       n,
+                        const T*        alpha,
+                        const T**       x,
+                        const int       incx,
+                        const T**       y,
+                        const int       incy,
+                        T**             A,
+                        const int       lda,
+                        const size_t    batch_count);
+
 template<typename T1, typename T2>
 sycl::event transpose(sycl::queue& q,
                       const T1* in,
@@ -67,11 +114,32 @@ sycl::event transpose(sycl::queue& q,
                       const std::vector<sycl::event>& events = {});
 
 template<typename T1, typename T2>
+sycl::event transpose_batched(sycl::queue& q,
+                              const T1** in,
+                              int m,
+                              int lda,
+                              T2* out,
+                              int n,
+                              int ldb,
+                              int batch_count,
+                              const std::vector<sycl::event>& events = {});
+
+template<typename T1, typename T2>
 sycl::event copy_n(sycl::queue& aq,
                    const T1* VA,
                    size_t array_size,
                    T2* VC,
                    const std::vector<sycl::event>& events = {});
+
+template<typename T>
+sycl::event copy_batched(sycl::queue&   handle,
+                         const syclBLAS_int  m,
+                         const T**           X,
+                         const syclBLAS_int  incx,
+                         T**                 Y,
+                         const syclBLAS_int  incy,
+                         const syclBLAS_int  batch_count,
+                         const std::vector<sycl::event> &events ={});
 
 } // namespace syclBLAS
 
