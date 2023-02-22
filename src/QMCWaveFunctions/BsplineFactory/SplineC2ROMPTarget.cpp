@@ -631,11 +631,14 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi_v_list[0].get().size();
+  std::cout << "debug  first_spo " << first_spo_local << " nComplexBands " << nComplexBands_local << " " << requested_orb_size << std::endl;
 
   {
     ScopedTimer offload(offload_timer_);
+    size_t first_cplx_check[2], last_cplx_check[2];
+    ST value[2];
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: pos_copy_ptr[0:num_pos*6]) \
+                    map(always, to: pos_copy_ptr[0:num_pos*6]) map(from: first_cplx_check, last_cplx_check, value) \
                     map(always, from: results_scratch_ptr[0:sposet_padded_size*num_pos*5])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -673,12 +676,33 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         }
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
+        first_cplx_check[iw] = first_cplx;
+        last_cplx_check[iw] = last_cplx;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr,
                           sposet_padded_size, mKK_ptr, offload_scratch_iw_ptr, spline_padded_size, G, myKcart_ptr,
                           myKcart_padded_size, first_spo_local, nComplexBands_local, index);
+        psi_iw_ptr[0] = 0.3;
+        value[iw] = psi_iw_ptr[1];
       }
+
+    offload_scratch.updateFrom();
+    results_scratch.updateFrom();
+    std::cout << "0first " << first_cplx_check[0] << " last " << last_cplx_check[0] << " value " << value[0] << std::endl;
+    std::cout << "1first " << first_cplx_check[1] << " last " << last_cplx_check[1] << " value " << value[1] << std::endl;
+    std::cout << "debug " << spline_padded_size << " " << sposet_padded_size << std::endl;
+    for (int iw = 0; iw < num_pos; iw++)
+    {
+      auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
+      for (int i = 0; i < spline_padded_size; i++)
+        std::cout << " " << offload_scratch_iw_ptr[i];
+      std::cout << std::endl;
+      auto* restrict results_iw_ptr = results_scratch_ptr + sposet_padded_size * iw * 5;
+      for (int i = 0; i < sposet_padded_size; i++)
+        std::cout << " " << results_iw_ptr[i];
+      std::cout << std::endl;
+    }
   }
 
   for (int iw = 0; iw < num_pos; ++iw)
