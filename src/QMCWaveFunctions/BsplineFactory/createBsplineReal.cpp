@@ -35,7 +35,7 @@ std::unique_ptr<BsplineReader> createBsplineReal(EinsplineSetBuilder* e, bool hy
   if (hybrid_rep)
   {
     app_summary() << "    Using hybrid orbital representation." << std::endl;
-    aReader = std::make_unique<HybridRepSetReader<HybridRepReal<SplineR2R<ST>>>>(e);
+    aReader = std::make_unique<HybridRepSetReader<HybridRepReal<ST>>>(e);
   }
   else
     aReader = std::make_unique<SplineSetReader<SplineR2R<ST>>>(e);

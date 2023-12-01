@@ -26,16 +26,6 @@
 #endif
 #include "HybridRepCplx.h"
 
-#if defined(QMC_COMPLEX)
-#include "SplineC2C.h"
-#include "SplineC2COMPTarget.h"
-#else
-#include "SplineR2R.h"
-#include "SplineC2R.h"
-#include "SplineC2ROMPTarget.h"
-#endif
-
-
 namespace qmcplusplus
 {
 /** General HybridRepSetReader to handle any unitcell
@@ -73,20 +63,16 @@ public:
 };
 
 #if defined(QMC_COMPLEX)
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<float>>>;
+extern template class HybridRepSetReader<HybridRepCplx<float>>;
 #if !defined(QMC_MIXED_PRECISION)
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2C<double>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<double>>>;
+extern template class HybridRepSetReader<HybridRepCplx<double>>;
 #endif
 #else
-extern template class HybridRepSetReader<HybridRepReal<SplineR2R<float>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<float>>>;
+extern template class HybridRepSetReader<HybridRepReal<float>>;
+extern template class HybridRepSetReader<HybridRepCplx<float>>;
 #if !defined(QMC_MIXED_PRECISION)
-extern template class HybridRepSetReader<HybridRepReal<SplineR2R<double>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2R<double>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<double>>>;
+extern template class HybridRepSetReader<HybridRepReal<double>>;
+extern template class HybridRepSetReader<HybridRepCplx<double>>;
 #endif
 #endif
 } // namespace qmcplusplus

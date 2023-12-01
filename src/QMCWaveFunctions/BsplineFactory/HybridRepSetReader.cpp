@@ -656,20 +656,16 @@ void HybridRepSetReader<SA>::initialize_hybrid_pio_gather(const int spin,
 }
 
 #if defined(QMC_COMPLEX)
-template class HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>;
-template class HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<float>>>;
+template class HybridRepSetReader<HybridRepCplx<float>>;
 #if !defined(QMC_MIXED_PRECISION)
-template class HybridRepSetReader<HybridRepCplx<SplineC2C<double>>>;
-template class HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<double>>>;
+template class HybridRepSetReader<HybridRepCplx<double>>;
 #endif
 #else
-template class HybridRepSetReader<HybridRepReal<SplineR2R<float>>>;
-template class HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>;
-template class HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<float>>>;
+template class HybridRepSetReader<HybridRepReal<float>>;
+template class HybridRepSetReader<HybridRepCplx<float>>;
 #if !defined(QMC_MIXED_PRECISION)
-template class HybridRepSetReader<HybridRepReal<SplineR2R<double>>>;
-template class HybridRepSetReader<HybridRepCplx<SplineC2R<double>>>;
-template class HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<double>>>;
+template class HybridRepSetReader<HybridRepReal<double>>;
+template class HybridRepSetReader<HybridRepCplx<double>>;
 #endif
 #endif
 } // namespace qmcplusplus

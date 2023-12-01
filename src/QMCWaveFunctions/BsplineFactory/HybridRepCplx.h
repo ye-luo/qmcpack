@@ -21,35 +21,49 @@
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "CPU/SIMD/inner_product.hpp"
 #include "BsplineSet.h"
+#include "SplineC2C.h"
+#include "SplineC2R.h"
 
 namespace qmcplusplus
 {
+
+template<typename ST, typename TT>
+struct SplineC2XType
+{
+  using value = SplineC2R<ST>;
+};
+
+template<typename ST, typename TT>
+struct SplineC2XType<ST, std::complex<TT>>
+{
+  using value = SplineC2C<ST>;
+};
+
 /** hybrid representation orbitals combining B-spline orbitals on a grid and atomic centered orbitals.
- * @tparam SPLINEBASE B-spline orbital class.
+ * @tparam SplineBase B-spline orbital class.
  *
- * Only works with SPLINEBASE class containing complex splines
+ * Only works with SplineBase class containing complex splines
  */
-template<typename SPLINEBASE>
-class HybridRepCplx : public SPLINEBASE, private HybridRepCenterOrbitals<typename SPLINEBASE::DataType>
+template<typename ST>
+class HybridRepCplx : public SplineC2XType<ST, SPOSet::ValueType>::value, private HybridRepCenterOrbitals<ST>
 {
 public:
-  using SplineBase       = SPLINEBASE;
-  using HYBRIDBASE       = HybridRepCenterOrbitals<typename SPLINEBASE::DataType>;
-  using ST               = typename SPLINEBASE::DataType;
-  using DataType         = typename SPLINEBASE::DataType;
-  using PointType        = typename SPLINEBASE::PointType;
-  using SingleSplineType = typename SPLINEBASE::SingleSplineType;
-  using RealType         = typename SPLINEBASE::RealType;
+  using SplineBase       = typename SplineC2XType<ST, SPOSet::ValueType>::value;
+  using HYBRIDBASE       = HybridRepCenterOrbitals<ST>;
+  using DataType         = typename SplineBase::DataType;
+  using PointType        = typename SplineBase::PointType;
+  using SingleSplineType = typename SplineBase::SingleSplineType;
+  using RealType         = typename SplineBase::RealType;
   // types for evaluation results
-  using typename SPLINEBASE::GGGVector;
-  using typename SPLINEBASE::GradMatrix;
-  using typename SPLINEBASE::GradType;
-  using typename SPLINEBASE::GradVector;
-  using typename SPLINEBASE::HessVector;
-  using typename SPLINEBASE::OffloadMWVGLArray;
-  using typename SPLINEBASE::ValueMatrix;
-  using typename SPLINEBASE::ValueType;
-  using typename SPLINEBASE::ValueVector;
+  using typename SplineBase::GGGVector;
+  using typename SplineBase::GradMatrix;
+  using typename SplineBase::GradType;
+  using typename SplineBase::GradVector;
+  using typename SplineBase::HessVector;
+  using typename SplineBase::OffloadMWVGLArray;
+  using typename SplineBase::ValueMatrix;
+  using typename SplineBase::ValueType;
+  using typename SplineBase::ValueVector;
 
 private:
   using typename HYBRIDBASE::Region;
@@ -59,48 +73,48 @@ private:
   Matrix<ST, aligned_allocator<ST>> multi_myV;
   typename HYBRIDBASE::LocationSmoothingInfo info;
 
-  using SPLINEBASE::myG;
-  using SPLINEBASE::myH;
-  using SPLINEBASE::myL;
-  using SPLINEBASE::myV;
+  using SplineBase::myG;
+  using SplineBase::myH;
+  using SplineBase::myL;
+  using SplineBase::myV;
 
 public:
-  HybridRepCplx(const std::string& my_name) : SPLINEBASE(my_name) {}
+  HybridRepCplx(const std::string& my_name) : SplineBase(my_name) {}
 
-  std::string getClassName() const final { return "Hybrid" + SPLINEBASE::getClassName(); }
-  std::string getKeyword() const final { return "Hybrid" + SPLINEBASE::getKeyword(); }
+  std::string getClassName() const final { return "Hybrid" + SplineBase::getClassName(); }
+  std::string getKeyword() const final { return "Hybrid" + SplineBase::getKeyword(); }
   bool isOMPoffload() const final { return false; }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<HybridRepCplx>(*this); }
 
   void bcast_tables(Communicate* comm)
   {
-    SPLINEBASE::bcast_tables(comm);
+    SplineBase::bcast_tables(comm);
     HYBRIDBASE::bcast_tables(comm);
   }
 
   void gather_tables(Communicate* comm)
   {
-    SPLINEBASE::gather_tables(comm);
-    HYBRIDBASE::gather_atomic_tables(comm, SPLINEBASE::offset);
+    SplineBase::gather_tables(comm);
+    HYBRIDBASE::gather_atomic_tables(comm, SplineBase::offset);
   }
 
-  bool read_splines(hdf_archive& h5f) { return HYBRIDBASE::read_splines(h5f) && SPLINEBASE::read_splines(h5f); }
+  bool read_splines(hdf_archive& h5f) { return HYBRIDBASE::read_splines(h5f) && SplineBase::read_splines(h5f); }
 
-  bool write_splines(hdf_archive& h5f) { return HYBRIDBASE::write_splines(h5f) && SPLINEBASE::write_splines(h5f); }
+  bool write_splines(hdf_archive& h5f) { return HYBRIDBASE::write_splines(h5f) && SplineBase::write_splines(h5f); }
 
   void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override
   {
     HYBRIDBASE::evaluate_v(P, iat, myV, info);
     if (info.region == Region::INTER)
-      SPLINEBASE::evaluateValue(P, iat, psi);
+      SplineBase::evaluateValue(P, iat, psi);
     else if (info.region == Region::INSIDE)
-      SPLINEBASE::assign_v(P.activeR(iat), myV, psi, 0, myV.size() / 2);
+      SplineBase::assign_v(P.activeR(iat), myV, psi, 0, myV.size() / 2);
     else
     {
       psi_AO.resize(psi.size());
-      SPLINEBASE::assign_v(P.activeR(iat), myV, psi_AO, 0, myV.size() / 2);
-      SPLINEBASE::evaluateValue(P, iat, psi);
+      SplineBase::assign_v(P.activeR(iat), myV, psi_AO, 0, myV.size() / 2);
+      SplineBase::evaluateValue(P, iat, psi);
       HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info.f);
     }
   }
@@ -121,17 +135,17 @@ public:
       for (int iat = 0; iat < VP.getTotalNum(); ++iat)
       {
         if (info.region == Region::INTER)
-          SPLINEBASE::evaluateValue(VP, iat, psi);
+          SplineBase::evaluateValue(VP, iat, psi);
         else if (info.region == Region::INSIDE)
         {
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
-          SPLINEBASE::assign_v(VP.R[iat], myV_one, psi, 0, myV.size() / 2);
+          SplineBase::assign_v(VP.R[iat], myV_one, psi, 0, myV.size() / 2);
         }
         else
         {
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
-          SPLINEBASE::assign_v(VP.R[iat], myV_one, psi_AO, 0, myV.size() / 2);
-          SPLINEBASE::evaluateValue(VP, iat, psi);
+          SplineBase::assign_v(VP.R[iat], myV_one, psi_AO, 0, myV.size() / 2);
+          SplineBase::evaluateValue(VP, iat, psi);
           HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info.f);
         }
         ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
@@ -160,16 +174,16 @@ public:
   {
     HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL, info);
     if (info.region == Region::INTER)
-      SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
+      SplineBase::evaluateVGL(P, iat, psi, dpsi, d2psi);
     else if (info.region == Region::INSIDE)
-      SPLINEBASE::assign_vgl_from_l(P.activeR(iat), psi, dpsi, d2psi);
+      SplineBase::assign_vgl_from_l(P.activeR(iat), psi, dpsi, d2psi);
     else
     {
       psi_AO.resize(psi.size());
       dpsi_AO.resize(psi.size());
       d2psi_AO.resize(psi.size());
-      SPLINEBASE::assign_vgl_from_l(P.activeR(iat), psi_AO, dpsi_AO, d2psi_AO);
-      SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
+      SplineBase::assign_vgl_from_l(P.activeR(iat), psi_AO, dpsi_AO, d2psi_AO);
+      SplineBase::evaluateVGL(P, iat, psi, dpsi, d2psi);
       HYBRIDBASE::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO, info);
     }
   }
@@ -204,9 +218,9 @@ public:
     APP_ABORT("HybridRepCplx::evaluate_vgh not implemented!");
     HYBRIDBASE::evaluate_vgh(P, iat, myV, myG, myH, info);
     if (info.region == Region::INTER)
-      SPLINEBASE::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
+      SplineBase::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
     else
-      SPLINEBASE::assign_vgh(P.activeR(iat), psi, dpsi, grad_grad_psi, 0, myV.size() / 2);
+      SplineBase::assign_vgh(P.activeR(iat), psi, dpsi, grad_grad_psi, 0, myV.size() / 2);
   }
 
   void evaluateVGHGH(const ParticleSet& P,
@@ -226,7 +240,7 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) final
   {
-    // bypass SPLINEBASE::evaluate_notranspose
+    // bypass SplineBase::evaluate_notranspose
     BsplineSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   }
 
