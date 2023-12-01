@@ -80,22 +80,23 @@ if(OHMMS_DIM MATCHES 3)
   if(HAVE_EINSPLINE)
     set(FERMION_SRCS
         ${FERMION_SRCS}
+        BandInfo.cpp
         BsplineFactory/EinsplineSetBuilderCommon.cpp
         BsplineFactory/EinsplineSetBuilderESHDF.fft.cpp
         BsplineFactory/EinsplineSetBuilder_createSPOs.cpp
         BsplineFactory/createBsplineComplex.cpp
-        BsplineFactory/HybridRepCenterOrbitals.cpp
+        BsplineFactory/BsplineReader.cpp
+        BsplineFactory/OneSplineOrbData.cpp
         BsplineFactory/SplineSetReader.cpp
         BsplineFactory/HybridRepSetReader.cpp
-        BsplineFactory/OneSplineOrbData.cpp
-        BandInfo.cpp
-        BsplineFactory/BsplineReader.cpp)
+        BsplineFactory/HybridRepCenterOrbitals.cpp
+        BsplineFactory/HybridRepCplx.cpp)
     set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createBsplineReal.cpp
+      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createBsplineReal.cpp BsplineFactory/HybridRepReal.cpp
         BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
     endif(QMC_COMPLEX)

@@ -251,5 +251,7 @@ public:
   friend struct BsplineReader;
 };
 
+extern template class HybridRepCplx<float>;
+extern template class HybridRepCplx<double>;
 } // namespace qmcplusplus
 #endif
