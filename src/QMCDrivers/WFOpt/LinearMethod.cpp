@@ -126,7 +126,10 @@ void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
 }
 
 
-LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const
+void LinearMethod::getLowestEigenvector(
+    Matrix<Real>& A,
+    std::vector<Real>& ev,
+    std::optional<std::reference_wrapper<std::vector<Real>>> sorted_eigenvalues) const
 {
   int Nl(ev.size());
   //   Getting the optimal worksize
@@ -203,13 +206,19 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
       app_log() << "No eigenvalues passed second filter. Optimization is likely to fail." << std::endl;
     }
   }
+
   std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
-  const auto id_chosen = mappedEigenvalues[0].second;
+  if (sorted_eigenvalues)
+  {
+    std::vector<Real>& sorted_ref = sorted_eigenvalues.value();
+    for (int i = 0; i < Nl; i++)
+      sorted_ref[i] = alphar[mappedEigenvalues[i].second];
+  }
+
+  const int id_chosen = mappedEigenvalues[0].second;
   app_log() << "The chosen eigenvector gets rescaled by eigenT(id_chosen, 0) = " << eigenT(id_chosen, 0) << std::endl;
   for (int i = 0; i < Nl; i++)
     ev[i] = eigenT(id_chosen, i) / eigenT(id_chosen, 0);
-  return alphar[id_chosen];
-  //     }
 }
 
 void LinearMethod::getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const

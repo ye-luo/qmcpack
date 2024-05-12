@@ -44,9 +44,9 @@ public:
    *
    */
   static void solveGeneralizedEigenvalues(Matrix<Real>& A,
-                                   Matrix<Real>& B,
-                                   std::vector<Real>& eigenvals,
-                                   Matrix<Real>& eigenvectors);
+                                          Matrix<Real>& B,
+                                          std::vector<Real>& eigenvals,
+                                          Matrix<Real>& eigenvectors);
 
   /** Solve by explicitly inverting the overlap matrix
    *  @param[in]  A Hamiltonian matrix
@@ -56,12 +56,15 @@ public:
    *
    */
   static void solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
-                                       Matrix<Real>& B,
-                                       std::vector<Real>& eigenvals,
-                                       Matrix<Real>& eigenvectors);
+                                              Matrix<Real>& B,
+                                              std::vector<Real>& eigenvals,
+                                              Matrix<Real>& eigenvectors);
 
   //asymmetric EV
-  Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const;
+  void getLowestEigenvector(
+      Matrix<Real>& A,
+      std::vector<Real>& ev,
+      std::optional<std::reference_wrapper<std::vector<Real>>> sorted_eigenvalues = std::nullopt) const;
   // compute a rescale factor. Ye: Where is the method from?
   Real getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S, const QMCCostFunctionBase& optTarget) const;
 };

@@ -1669,15 +1669,15 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    RealType lowestEV = 0.;
-    lowestEV          = getLowestEigenvector(prdMat, parameterDirections);
+    std::vector<RealType> sorted_eigenvalues(N);
+    getLowestEigenvector(prdMat, parameterDirections, sorted_eigenvalues);
 
     // compute the scaling constant to apply to the update
     objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
     if (do_output_matrices_hdf_)
     {
-      hout.write(lowestEV, "lowest_eigenvalue");
+      hout.write(sorted_eigenvalues[0], "lowest_eigenvalue");
       hout.write(parameterDirections, "scaled_eigenvector");
       hout.write(objFuncWrapper_.Lambda, "non_linear_rescale");
       hout.close();
