@@ -1672,6 +1672,12 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     std::vector<RealType> sorted_eigenvalues(N);
     getLowestEigenvector(prdMat, parameterDirections, sorted_eigenvalues);
 
+    { // output sorted eigenvalues.
+      std::ofstream myfile(get_root_name() + ".sorted_eigenvalues.dat");
+      for (int i = 0; i < N; i++)
+        myfile << i << "          " << sorted_eigenvalues[i] << std::endl;
+    }
+
     // compute the scaling constant to apply to the update
     objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
