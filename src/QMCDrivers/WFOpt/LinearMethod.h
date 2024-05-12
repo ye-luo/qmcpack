@@ -60,8 +60,6 @@ public:
                                        std::vector<Real>& eigenvals,
                                        Matrix<Real>& eigenvectors);
 
-  //asymmetric generalized EV
-  Real getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const;
   //asymmetric EV
   Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const;
   // compute a rescale factor. Ye: Where is the method from?

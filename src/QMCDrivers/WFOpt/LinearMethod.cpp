@@ -126,51 +126,6 @@ void LinearMethod::solveGeneralizedEigenvalues_Inv(Matrix<Real>& A,
 }
 
 
-LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const
-{
-  int Nl(ev.size());
-  //   Getting the optimal worksize
-  char jl('N');
-  char jr('V');
-  std::vector<Real> alphar(Nl), alphai(Nl), beta(Nl);
-  Matrix<Real> eigenT(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<Real> work(1);
-  Real tt(0);
-  int t(1);
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
-
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
-  std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
-  for (int i = 0; i < Nl; i++)
-  {
-    Real evi(alphar[i] / beta[i]);
-    if (std::abs(evi) < 1e10)
-    {
-      mappedEigenvalues[i].first  = evi;
-      mappedEigenvalues[i].second = i;
-    }
-    else
-    {
-      mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
-      mappedEigenvalues[i].second = i;
-    }
-  }
-  std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
-  for (int i = 0; i < Nl; i++)
-    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
-  return mappedEigenvalues[0].first;
-}
-
 LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const
 {
   int Nl(ev.size());
