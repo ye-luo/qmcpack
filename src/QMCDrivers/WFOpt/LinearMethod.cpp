@@ -204,10 +204,11 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
     }
   }
   std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
-  //         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<< std::endl;
+  const auto id_chosen = mappedEigenvalues[0].second;
+  app_log() << "The chosen eigenvector gets rescaled by eigenT(id_chosen, 0) = " << eigenT(id_chosen, 0) << std::endl;
   for (int i = 0; i < Nl; i++)
-    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
-  return alphar[mappedEigenvalues[0].second];
+    ev[i] = eigenT(id_chosen, i) / eigenT(id_chosen, 0);
+  return alphar[id_chosen];
   //     }
 }
 
