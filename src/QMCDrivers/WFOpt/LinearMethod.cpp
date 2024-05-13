@@ -212,7 +212,10 @@ void LinearMethod::getLowestEigenvector(
   {
     std::vector<Real>& sorted_ref = sorted_eigenvalues.value();
     for (int i = 0; i < Nl; i++)
+    {
       sorted_ref[i] = alphar[mappedEigenvalues[i].second];
+      app_log() << i << "     eigenvalue = " << alphar[mappedEigenvalues[i].second] << "   eigenT(i, 0) = "  << eigenT(mappedEigenvalues[i].second, 0) << std::endl;
+    }
   }
 
   const int id_chosen = mappedEigenvalues[0].second;
