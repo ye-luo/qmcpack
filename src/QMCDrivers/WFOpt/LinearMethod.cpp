@@ -154,13 +154,14 @@ void LinearMethod::getLowestEigenvector(
     APP_ABORT("Invalid Matrix Diagonalization Function!");
   }
 
+  std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
+#if 0
   // Filter and sort to find desired eigenvalue.
   // Filter accepts eigenvalues between E_0 and E_0 - 100.0,
   // where E_0 is H(0,0), the current estimate for the VMC energy.
   // Sort searches for eigenvalue closest to E_0 - 2.0
 
   bool found_any_eigenvalue = false;
-  std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
   for (int i = 0; i < Nl; i++)
   {
     Real evi(alphar[i]);
@@ -206,6 +207,13 @@ void LinearMethod::getLowestEigenvector(
       app_log() << "No eigenvalues passed second filter. Optimization is likely to fail." << std::endl;
     }
   }
+#else
+  for (int i = 0; i < Nl; i++)
+  {
+    mappedEigenvalues[i].first  = 1 - std::abs(eigenT(i, 0));
+    mappedEigenvalues[i].second = i;
+  }
+#endif
 
   std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
   if (sorted_eigenvalues)
