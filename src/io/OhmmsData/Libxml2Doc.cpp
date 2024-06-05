@@ -20,6 +20,7 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <libxml/parser.h>
 
 OhmmsXPathObject::OhmmsXPathObject() : NumObjects(0), result(NULL), m_context(NULL) {}
 

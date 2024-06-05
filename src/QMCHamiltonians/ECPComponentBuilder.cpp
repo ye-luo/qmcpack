@@ -24,6 +24,7 @@
 #include "Platforms/Host/OutputManager.h"
 #include <cmath>
 #include "Utilities/qmc_common.h"
+#include <libxml/parser.h>
 
 
 namespace qmcplusplus
