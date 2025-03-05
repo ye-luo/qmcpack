@@ -48,6 +48,13 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
 }
 
 template<typename DU_TYPE>
+DiracDeterminant<DU_TYPE>::~DiracDeterminant()
+{
+  updateEng.releaseFromDeviceCopy(psiM);
+  updateEng.releaseFromDeviceCopy(psiM_temp);
+}
+
+template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
@@ -112,13 +119,23 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
+
   updateEng.resize(norb, ndelay_);
+
+  if(psiM.size())
+    updateEng.releaseFromDeviceCopy(psiM);
+  if(psiM_temp.size())
+    updateEng.releaseFromDeviceCopy(psiM_temp);
+
   psiM.resize(nel, norb);
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
   invRow.resize(norb);
   psiM_temp.resize(nel, norb);
+
+  updateEng.prepareForDeviceCopy(psiM);
+  updateEng.prepareForDeviceCopy(psiM_temp);
 
   dpsiV.resize(NumOrbitals);
   dspin_psiV.resize(NumOrbitals);

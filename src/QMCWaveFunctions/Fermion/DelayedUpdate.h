@@ -66,6 +66,10 @@ public:
     delay_list.resize(delay);
   }
 
+  inline void prepareForDeviceCopy(const Matrix<T>& mat) const {}
+
+  inline void releaseFromDeviceCopy(const Matrix<T>& mat) const {}
+
   /** compute the inverse of the transpose of matrix A
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
