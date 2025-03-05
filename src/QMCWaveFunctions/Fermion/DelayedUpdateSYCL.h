@@ -35,8 +35,8 @@ template<typename T, typename T_FP>
 class DelayedUpdateSYCL
 {
   // Data staged during for delayed acceptRows
-  Matrix<T> U;
-  Matrix<T> Binv;
+  Matrix<T, SYCLHostAllocator<T>> U;
+  Matrix<T, SYCLHostAllocator<T>> Binv;
   Matrix<T> V;
   //Matrix<T> tempMat; // for debugging only
   Matrix<T, SYCLAllocator<T>> temp_gpu;
@@ -57,7 +57,7 @@ class DelayedUpdateSYCL
   // the range of prefetched_Ainv_rows
   PrefetchedRange prefetched_range;
   // Ainv prefetch buffer
-  Matrix<T> Ainv_buffer;
+  Matrix<T, SYCLHostAllocator<T>> Ainv_buffer;
 
   sycl::queue m_queue_;
 
