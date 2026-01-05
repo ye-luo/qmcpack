@@ -1018,57 +1018,42 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm, 
 
   std::fill(ovlParmVec.begin(), ovlParmVec.end(), 0.0);
 
-  std::vector<Return_t> D_avg(getNumParams(), 0.0);
+  const auto nparam = getNumParams();
+  std::vector<Return_t> D_avg(nparam, 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
 
+  #pragma omp parallel
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
     const Return_rt* restrict saved = RecordsOnNode_[iw];
     Return_rt weight                = saved[REWEIGHT] * wgtinv;
     const Return_t* Dsaved          = DerivRecords_[iw];
-    for (int pm = 0; pm < getNumParams(); pm++)
+    #pragma omp for simd nowait
+    for (int pm = 0; pm < nparam; pm++)
       D_avg[pm] += Dsaved[pm] * weight;
   }
 
   myComm->allreduce(D_avg);
 
   std::vector<Return_t> prod(rank_local_num_samples_, 0.0);
+  #pragma omp parallel for
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
-    const Return_rt* restrict saved = RecordsOnNode_[iw];
-    Return_rt weight                = saved[REWEIGHT] * wgtinv;
     const Return_t* Dsaved          = DerivRecords_[iw];
-    for (int pm = 0; pm < getNumParams(); pm++)
+    for (int pm = 0; pm < nparam; pm++)
       prod[iw] += (Dsaved[pm] - D_avg[pm]) * parm[pm];
   }
 
-
+  #pragma omp parallel
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
     const Return_rt* restrict saved = RecordsOnNode_[iw];
     Return_rt weight                = saved[REWEIGHT] * wgtinv;
     const Return_t* Dsaved          = DerivRecords_[iw];
 
-    size_t opt_num_crowds = walkers_per_crowd_.size();
-    std::vector<int> params_per_crowd(opt_num_crowds + 1);
-    FairDivide(getNumParams(), opt_num_crowds, params_per_crowd);
-
-    auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_t* Dsaved,
-                                Return_rt weight, std::vector<Return_t>& D_avg, const Return_t prod,
-                                std::vector<Return_rt>& ovlParmVec) {
-      int local_pm_start = crowd_ranges[crowd_id];
-      int local_pm_end   = crowd_ranges[crowd_id + 1];
-
-      for (int pm = local_pm_start; pm < local_pm_end; pm++)
-      {
-        Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
-        ovlParmVec[pm] += std::real(std::conj(wfd) * prod);
-      }
-    };
-
-    ParallelExecutor<> crowd_tasks;
-    crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, D_avg, prod[iw],
-                ovlParmVec);
+    #pragma omp for simd nowait
+    for (int pm = 0; pm < nparam; pm++)
+      ovlParmVec[pm] += weight * std::real(std::conj(Dsaved[pm] - D_avg[pm]) * prod[iw]);
   }
   myComm->allreduce(ovlParmVec);
 }
