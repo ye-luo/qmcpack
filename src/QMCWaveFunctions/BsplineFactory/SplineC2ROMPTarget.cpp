@@ -848,7 +848,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
             omptarget::min(last_cplx + omptarget::min(nComplexBands_local, last_cplx), requested_orb_size);
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
-        for (int j = first_real; j < last_real; j++)
+        for (int j = first_real + 65536*32; j < last_real; j++)
         {
           out_phi[j]    = psi[j];
           out_dphi_x[j] = dpsi_x[j];
