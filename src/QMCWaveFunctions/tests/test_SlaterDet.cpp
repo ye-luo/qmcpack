@@ -137,6 +137,11 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {}
+  mutable bool mw_prepareGroup_called = false;
+  void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override
+  {
+    mw_prepareGroup_called = true;
+  }
   std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& spo) const override
   { return std::make_unique<DummyDiracDetWithMW>(getClassName(), spo, FirstIndex, LastIndex); }
 };
@@ -179,6 +184,9 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
     ResourceCollection sd_res("test_sd_res");
     slaterdet0.createResource(sd_res);
     ResourceCollectionTeamLock<WaveFunctionComponent> mw_sd_lock(sd_res, sd_list);
+
+    slaterdet0.mw_prepareGroup(sd_list, p_list, 0);
+    CHECK(static_cast<const DummyDiracDetWithMW&>(slaterdet0.getDet(0)).mw_prepareGroup_called);
 
     std::vector<SPOSet::GradType> grads(2);
     std::vector<WaveFunctionComponent::PsiValue> ratios(2);

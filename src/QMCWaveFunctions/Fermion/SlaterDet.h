@@ -137,6 +137,10 @@ public:
     }
   }
 
+  void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list,
+                       int ig) const override;
+
   PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
@@ -281,6 +285,7 @@ public:
   inline int getNumDets() const { return Dets.size(); }
   ///return the i-th determinant
   inline auto& getDet(const int i) { return *Dets[i]; }
+  inline const auto& getDet(const int i) const { return *Dets[i]; }
   ///return the sposet of the i-th determinant
   SPOSet& getPhi(int i = 0) { return Dets[i]->getPhi(); }
 

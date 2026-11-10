@@ -117,6 +117,9 @@ public:
    */
   PsiValue ratio(ParticleSet& P, int iat) override;
 
+  using DiracDeterminantBase::mw_prepareGroup;
+  void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
@@ -274,6 +277,8 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios) override;
 
   const auto& get_psiMinv() const { return psiMinv_; }
+  const DualVector<Value*>& get_inv_mat_ptrs() const;
+  DualVector<Value*>& get_inv_mat_ptrs();
 
 private:
   /** @defgroup LegacySingleData

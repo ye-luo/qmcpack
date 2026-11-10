@@ -67,6 +67,8 @@ struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalker
   OffloadMatrix<ComplexType> mw_dspin;
   /// reference to per DDB psiMinvs in a crowd
   RefVector<DualMatrix<Value>> psiMinv_refs;
+  /// dual space vector of psiMinv_ pointers: host pointers on host, device pointers on device
+  DualVector<Value*> inv_mat_ptrs;
   ///
   typename UpdateEngine::MultiWalkerResource engine_rsc;
 };
@@ -732,6 +734,43 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched
     curRatio = simd::dot(psiMinv_[WorkingIndex], psiV.data(), NumOrbitals);
   }
   return curRatio;
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminantBatched<PL, VT, FPVT>::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+{
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader   = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
+  auto& inv_mat_ptrs = wfc_leader.mw_res_handle_.getResource().inv_mat_ptrs;
+  const size_t nw    = wfc_list.size();
+
+  inv_mat_ptrs.resize(nw);
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& det        = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+    inv_mat_ptrs[iw] = det.psiMinv_.device_data();
+  }
+  inv_mat_ptrs.updateTo();
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& det        = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+    inv_mat_ptrs[iw] = det.psiMinv_.data();
+  }
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
+const typename DiracDeterminantBatched<PL, VT, FPVT>::template DualVector<typename DiracDeterminantBatched<PL, VT, FPVT>::Value*>&
+DiracDeterminantBatched<PL, VT, FPVT>::get_inv_mat_ptrs() const
+{
+  return mw_res_handle_.getResource().inv_mat_ptrs;
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminantBatched<PL, VT, FPVT>::template DualVector<typename DiracDeterminantBatched<PL, VT, FPVT>::Value*>&
+DiracDeterminantBatched<PL, VT, FPVT>::get_inv_mat_ptrs()
+{
+  return mw_res_handle_.getResource().inv_mat_ptrs;
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
