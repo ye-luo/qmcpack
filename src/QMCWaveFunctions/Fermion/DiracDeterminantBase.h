@@ -125,8 +125,6 @@ public:
       std::vector<std::vector<ValueType>>& ratios) const override
   { mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios); }
 
-  virtual void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const {}
-
   [[noreturn]] void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                     const RefVectorWithLeader<ParticleSet>& p_list,
                                     int ig) const override

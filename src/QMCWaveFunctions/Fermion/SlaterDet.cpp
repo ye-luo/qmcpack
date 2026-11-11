@@ -110,16 +110,6 @@ void SlaterDet::mw_evaluateSpinorRatios(
   }
 }
 
-void SlaterDet::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                const RefVectorWithLeader<ParticleSet>& p_list,
-                                int ig) const
-{
-  assert(this == &wfc_list.getLeader());
-  assert(ig >= 0 && ig < Dets.size());
-  auto det_list = extract_DetRef_list(wfc_list, ig);
-  Dets[ig]->mw_prepareGroup(det_list);
-}
-
 PsiValue SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 { return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat); }
 

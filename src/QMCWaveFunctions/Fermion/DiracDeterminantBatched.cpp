@@ -739,23 +739,6 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
-void DiracDeterminantBatched<PL, VT, FPVT>::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{
-  assert(this == &wfc_list.getLeader());
-  auto& wfc_leader           = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
-  auto& inv_mat_dev_ptr_list = wfc_leader.mw_res_handle_.getResource().inv_mat_dev_ptr_list;
-  const size_t nw            = wfc_list.size();
-
-  inv_mat_dev_ptr_list.resize(nw);
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-    auto& det                = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-    inv_mat_dev_ptr_list[iw] = det.psiMinv_.device_data();
-  }
-  inv_mat_dev_ptr_list.updateTo();
-}
-
-template<PlatformKind PL, typename VT, typename FPVT>
 const typename DiracDeterminantBatched<PL, VT, FPVT>::template DualVector<typename DiracDeterminantBatched<PL, VT, FPVT>::Value*>&
 DiracDeterminantBatched<PL, VT, FPVT>::get_inv_mat_dev_ptr_list() const
 {
@@ -1271,6 +1254,17 @@ void DiracDeterminantBatched<PL, VT, FPVT>::acquireResource(
   auto& wfc_leader           = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
   wfc_leader.mw_res_handle_  = collection.lendResource<DiracDeterminantBatchedMultiWalkerResource>();
   wfc_leader.accel_inverter_ = collection.lendResource<DiracMatrixInverter<FPVT, VT>>();
+
+  auto& inv_mat_dev_ptr_list = wfc_leader.mw_res_handle_.getResource().inv_mat_dev_ptr_list;
+  const size_t nw            = wfc_list.size();
+
+  inv_mat_dev_ptr_list.resize(nw);
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& det                = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+    inv_mat_dev_ptr_list[iw] = det.psiMinv_.device_data();
+  }
+  inv_mat_dev_ptr_list.updateTo();
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>

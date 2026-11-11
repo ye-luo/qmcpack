@@ -119,10 +119,6 @@ public:
                                const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
                                std::vector<std::vector<ValueType>>& ratios) const final;
 
-  void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                       const RefVectorWithLeader<ParticleSet>& p_list,
-                       int ig) const override;
-
   PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
