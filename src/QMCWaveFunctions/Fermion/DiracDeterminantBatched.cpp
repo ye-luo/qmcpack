@@ -150,7 +150,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  psiMinv_.resize(norb, getAlignedSize<Value>(norb));
+  psiMinv_.resize(norb, norb);
   psiM_vgl.resize(nel * norb);
   // attach pointers VGL
   psiM_temp.attachReference(psiM_vgl, psiM_vgl.data(0), nel, norb);

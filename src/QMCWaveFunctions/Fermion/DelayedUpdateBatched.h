@@ -185,7 +185,6 @@ private:
     auto& czero_vec                  = mw_rsc.czero_vec;
     auto& prepare_inv_row_buffer_H2D = mw_rsc.prepare_inv_row_buffer_H2D;
     const int norb                   = engine_leader.invRow.size();
-    const int lda                    = getAlignedSize<Value>(norb);
     const int nw                     = engines.size();
     int& delay_count                 = engine_leader.delay_count;
 
@@ -198,7 +197,7 @@ private:
     for (int iw = 0; iw < nw; iw++)
     {
       This_t& engine    = engines[iw];
-      ptr_buffer[0][iw] = inv_mat_dev_ptr_list[iw] + rowchanged * lda;
+      ptr_buffer[0][iw] = inv_mat_dev_ptr_list[iw] + rowchanged * norb;
       ptr_buffer[1][iw] = engine.invRow.device_data();
       ptr_buffer[2][iw] = engine.U_gpu.data();
       ptr_buffer[3][iw] = engine.p_gpu.data();
@@ -279,7 +278,6 @@ private:
     auto& cone_vec              = mw_rsc.cone_vec;
     auto& czero_vec             = mw_rsc.czero_vec;
     const int norb              = engine_leader.invRow.size();
-    const int lda               = getAlignedSize<Value>(norb);
     const int nw                = engines.size();
     const size_t phi_vgl_stride = nw * norb;
     mw_temp.resize(norb * n_accepted);
@@ -328,15 +326,15 @@ private:
 
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      compute::BLAS::gemv_batched(blas_handle, 'T', norb, norb, cone_vec.device_data(), Ainv_mw_ptr, lda, phiVGL_mw_ptr,
-                                  1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted);
+      compute::BLAS::gemv_batched(blas_handle, 'T', norb, norb, cone_vec.device_data(), Ainv_mw_ptr, norb,
+                                  phiVGL_mw_ptr, 1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted);
 
-      compute::copyAinvRow_saveGL_batched(queue, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr, rcopy_mw_ptr,
+      compute::copyAinvRow_saveGL_batched(queue, rowchanged, norb, Ainv_mw_ptr, norb, temp_mw_ptr, rcopy_mw_ptr,
                                           phiVGL_mw_ptr, phi_vgl_stride, dpsiM_mw_out, d2psiM_mw_out, n_accepted);
 
 
       compute::BLAS::ger_batched(blas_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1, Ainv_mw_ptr,
-                                 lda, n_accepted);
+                                 norb, n_accepted);
     }
   }
 
@@ -370,11 +368,10 @@ public:
     evalGrad_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), num_ptrs_packed, nw);
     const int norb = engine_leader.invRow.size();
-    const int lda  = getAlignedSize<Value>(norb);
     for (int iw = 0; iw < nw; iw++)
     {
       if (engine_leader.no_delayed_update_)
-        ptr_buffer[0][iw] = inv_mat_dev_ptr_list[iw] + rowchanged * lda;
+        ptr_buffer[0][iw] = inv_mat_dev_ptr_list[iw] + rowchanged * norb;
       else
         ptr_buffer[0][iw] = engines[iw].invRow.device_data();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
@@ -413,7 +410,6 @@ public:
     auto& spingrads_value_v = mw_rsc.spingrads_value_v;
 
     const int norb      = engine_leader.invRow.size();
-    const int lda       = getAlignedSize<Value>(norb);
     const int nw        = engines.size();
     buffer_H2D.resize(sizeof(const Value*) * nw);
     auto* dpsiM_row_ptr_buffer = reinterpret_cast<const Value**>(buffer_H2D.data());
@@ -440,7 +436,7 @@ public:
                     map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()])")
     for (int iw = 0; iw < nw; iw++)
     {
-      const Value* __restrict__ invRow_ptr    = inv_mat_dev_ptr_list_ptr[iw] + rowchanged * lda;
+      const Value* __restrict__ invRow_ptr    = inv_mat_dev_ptr_list_ptr[iw] + rowchanged * norb;
       const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
       Value grad_x(0), grad_y(0), grad_z(0);
       Complex spingrad(0);
@@ -559,7 +555,6 @@ public:
     int& delay_count                  = engine_leader.delay_count;
     const int lda_Binv                = engine_leader.Binv_gpu.cols();
     const int norb                    = engine_leader.invRow.size();
-    const int lda                     = getAlignedSize<Value>(norb);
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
     const size_t phi_vgl_stride       = nw * norb;
@@ -577,7 +572,7 @@ public:
       Value* psiMinv_dev_ptr = inv_mat_dev_ptr_list[iw];
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count_accepted]  = psiMinv_dev_ptr + lda * rowchanged;
+        ptr_buffer[0][count_accepted]  = psiMinv_dev_ptr + norb * rowchanged;
         ptr_buffer[1][count_accepted]  = engine.V_gpu.data();
         ptr_buffer[2][count_accepted]  = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][count_accepted]  = engine.p_gpu.data();
@@ -594,7 +589,7 @@ public:
       }
       else
       {
-        ptr_buffer[0][n_accepted + count_rejected] = psiMinv_dev_ptr + lda * rowchanged;
+        ptr_buffer[0][n_accepted + count_rejected] = psiMinv_dev_ptr + norb * rowchanged;
         ptr_buffer[1][n_accepted + count_rejected] = engine.V_gpu.data();
         ptr_buffer[2][n_accepted + count_rejected] = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][n_accepted + count_rejected] = engine.p_gpu.data();
@@ -676,7 +671,6 @@ public:
     auto& blas_handle          = mw_rsc.blas_handle;
     auto& updateInv_buffer_H2D = mw_rsc.updateInv_buffer_H2D;
     const int norb             = engine_leader.invRow.size();
-    const int lda              = getAlignedSize<Value>(norb);
     const int nw               = engines.size();
 
     constexpr size_t num_ptrs_packed = 5; // it must match packing and unpacking
@@ -717,12 +711,12 @@ public:
     {
       const int lda_Binv = engine_leader.Binv_gpu.cols();
       compute::BLAS::gemm_batched(blas_handle, 'T', 'N', delay_count, norb, norb, Value(1), U_mw_ptr, norb, Ainv_mw_ptr,
-                                  lda, Value(0), tempMat_mw_ptr, lda_Binv, nw);
+                                  norb, Value(0), tempMat_mw_ptr, lda_Binv, nw);
       compute::applyW_batched(queue, delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv, nw);
       compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, delay_count, delay_count, Value(1), V_mw_ptr, norb,
                                   Binv_mw_ptr, lda_Binv, Value(0), U_mw_ptr, norb, nw);
       compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, norb, delay_count, Value(-1), U_mw_ptr, norb,
-                                  tempMat_mw_ptr, lda_Binv, Value(1), Ainv_mw_ptr, lda, nw);
+                                  tempMat_mw_ptr, lda_Binv, Value(1), Ainv_mw_ptr, norb, nw);
     }
     delay_count = 0;
   }
@@ -774,10 +768,9 @@ public:
       // copy values to host and return host pointer
       if (engine_leader.no_delayed_update_)
       {
-        const size_t norb  = engine_leader.invRow.size();
-        const size_t ncols = getAlignedSize<Value>(norb);
+        const size_t norb = engine_leader.invRow.size();
         for (int iw = 0; iw < engines.size(); iw++)
-          row_ptr_list.push_back(inv_mat_dev_ptr_list[iw] + row_id * ncols);
+          row_ptr_list.push_back(inv_mat_dev_ptr_list[iw] + row_id * norb);
       }
       else
         for (This_t& engine : engines)
@@ -791,10 +784,9 @@ public:
       // return device pointer
       if (engine_leader.no_delayed_update_)
       {
-        const size_t norb  = engine_leader.invRow.size();
-        const size_t ncols = getAlignedSize<Value>(norb);
+        const size_t norb = engine_leader.invRow.size();
         for (int iw = 0; iw < engines.size(); iw++)
-          row_ptr_list.push_back(inv_mat_dev_ptr_list[iw] + row_id * ncols);
+          row_ptr_list.push_back(inv_mat_dev_ptr_list[iw] + row_id * norb);
       }
       else
         for (This_t& engine : engines)
