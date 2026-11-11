@@ -277,8 +277,8 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios) override;
 
   const auto& get_psiMinv() const { return psiMinv_; }
-  const DualVector<Value*>& get_inv_mat_ptrs() const;
-  DualVector<Value*>& get_inv_mat_ptrs();
+  const DualVector<Value*>& get_inv_mat_dev_ptr_list() const;
+  DualVector<Value*>& get_inv_mat_dev_ptr_list();
 
 private:
   /** @defgroup LegacySingleData

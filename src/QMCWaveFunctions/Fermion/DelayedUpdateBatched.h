@@ -174,7 +174,7 @@ private:
    */
   static void mw_prepareInvRow(const RefVectorWithLeader<This_t>& engines,
                                MultiWalkerResource& mw_rsc,
-                               const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                               const DualVector<Value*>& inv_mat_dev_ptr_list,
                                const int rowchanged)
   {
     auto& engine_leader              = engines.getLeader();
@@ -185,6 +185,7 @@ private:
     auto& czero_vec                  = mw_rsc.czero_vec;
     auto& prepare_inv_row_buffer_H2D = mw_rsc.prepare_inv_row_buffer_H2D;
     const int norb                   = engine_leader.invRow.size();
+    const int lda                    = getAlignedSize<Value>(norb);
     const int nw                     = engines.size();
     int& delay_count                 = engine_leader.delay_count;
 
@@ -196,15 +197,14 @@ private:
     Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      This_t& engine             = engines[iw];
-      DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
-      ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
-      ptr_buffer[1][iw]          = engine.invRow.device_data();
-      ptr_buffer[2][iw]          = engine.U_gpu.data();
-      ptr_buffer[3][iw]          = engine.p_gpu.data();
-      ptr_buffer[4][iw]          = engine.Binv_gpu.data();
-      ptr_buffer[5][iw]          = engine.Binv_gpu.data() + delay_count * lda_Binv;
-      ptr_buffer[6][iw]          = engine.V_gpu.data();
+      This_t& engine    = engines[iw];
+      ptr_buffer[0][iw] = inv_mat_dev_ptr_list[iw] + rowchanged * lda;
+      ptr_buffer[1][iw] = engine.invRow.device_data();
+      ptr_buffer[2][iw] = engine.U_gpu.data();
+      ptr_buffer[3][iw] = engine.p_gpu.data();
+      ptr_buffer[4][iw] = engine.Binv_gpu.data();
+      ptr_buffer[5][iw] = engine.Binv_gpu.data() + delay_count * lda_Binv;
+      ptr_buffer[6][iw] = engine.V_gpu.data();
     }
 
     queue.enqueueH2D(prepare_inv_row_buffer_H2D);
@@ -252,7 +252,7 @@ private:
    */
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
                            MultiWalkerResource& mw_rsc,
-                           const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                           const DualVector<Value*>& inv_mat_dev_ptr_list,
                            const int rowchanged,
                            const std::vector<Value*>& psiM_g_list,
                            const std::vector<Value*>& psiM_l_list,
@@ -279,7 +279,7 @@ private:
     auto& cone_vec              = mw_rsc.cone_vec;
     auto& czero_vec             = mw_rsc.czero_vec;
     const int norb              = engine_leader.invRow.size();
-    const int lda               = psiMinv_refs[0].get().cols();
+    const int lda               = getAlignedSize<Value>(norb);
     const int nw                = engines.size();
     const size_t phi_vgl_stride = nw * norb;
     mw_temp.resize(norb * n_accepted);
@@ -295,7 +295,7 @@ private:
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count] = psiMinv_refs[iw].get().device_data();
+        ptr_buffer[0][count] = inv_mat_dev_ptr_list[iw];
         ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
         ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
@@ -352,14 +352,14 @@ public:
   template<typename GT>
   static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines,
                           MultiWalkerResource& mw_rsc,
-                          const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                          const DualVector<Value*>& inv_mat_dev_ptr_list,
                           const std::vector<const Value*>& dpsiM_row_list,
                           const int rowchanged,
                           std::vector<GT>& grad_now)
   {
     auto& engine_leader = engines.getLeader();
     if (!engine_leader.no_delayed_update_)
-      mw_prepareInvRow(engines, mw_rsc, psiMinv_refs, rowchanged);
+      mw_prepareInvRow(engines, mw_rsc, inv_mat_dev_ptr_list, rowchanged);
 
     auto& queue               = mw_rsc.queue;
     auto& evalGrad_buffer_H2D = mw_rsc.evalGrad_buffer_H2D;
@@ -369,13 +369,12 @@ public:
     constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
     evalGrad_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), num_ptrs_packed, nw);
+    const int norb = engine_leader.invRow.size();
+    const int lda  = getAlignedSize<Value>(norb);
     for (int iw = 0; iw < nw; iw++)
     {
       if (engine_leader.no_delayed_update_)
-      {
-        DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
-        ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
-      }
+        ptr_buffer[0][iw] = inv_mat_dev_ptr_list[iw] + rowchanged * lda;
       else
         ptr_buffer[0][iw] = engines[iw].invRow.device_data();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
@@ -401,7 +400,7 @@ public:
   template<typename GT>
   static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
                                   MultiWalkerResource& mw_rsc,
-                                  const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                                  const DualVector<Value*>& inv_mat_dev_ptr_list,
                                   const std::vector<const Value*>& dpsiM_row_list,
                                   OffloadMatrix<Complex>& mw_dspin,
                                   const int rowchanged,
@@ -413,21 +412,13 @@ public:
     auto& grads_value_v     = mw_rsc.grads_value_v;
     auto& spingrads_value_v = mw_rsc.spingrads_value_v;
 
-    //Need to pack these into a transfer buffer since psiMinv and dpsiM_row_list are not multiwalker data
-    //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd.
-    //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_rsc_handle_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
-    //That is how mw_dspin is handled below
-    const int norb                   = psiMinv_refs[0].get().rows();
-    const int nw                     = engines.size();
-    constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
-    buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
-    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
+    const int norb      = engine_leader.invRow.size();
+    const int lda       = getAlignedSize<Value>(norb);
+    const int nw        = engines.size();
+    buffer_H2D.resize(sizeof(const Value*) * nw);
+    auto* dpsiM_row_ptr_buffer = reinterpret_cast<const Value**>(buffer_H2D.data());
     for (int iw = 0; iw < nw; iw++)
-    {
-      DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
-      ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
-      ptr_buffer[1][iw]          = dpsiM_row_list[iw];
-    }
+      dpsiM_row_ptr_buffer[iw] = dpsiM_row_list[iw];
 
     constexpr unsigned DIM = GT::Size;
     grads_value_v.resize(nw, DIM);
@@ -436,20 +427,21 @@ public:
     auto* __restrict__ spingrads_value_v_ptr = spingrads_value_v.data();
     auto* buffer_H2D_ptr                     = buffer_H2D.data();
     auto* mw_dspin_ptr                       = mw_dspin.data();
+    auto* inv_mat_dev_ptr_list_ptr           = inv_mat_dev_ptr_list.data();
 
     //Note that mw_dspin should already be in sync between device and host...updateTo was called in
     //SPOSet::mw_evaluateVGLWithSpin to sync
-    //Also note that since mw_dspin is Dual, I can just use mw_dpsin.data() above and then use directly inside
-    //then offload region. OMP will figure out the correct translation to the device address, i.e. no
-    //need to include in the PRAGMA_OFFLOAD below
+    //Also note that since mw_dspin and inv_mat_dev_ptr_list are Dual, we can just use their data() pointers above
+    //and use them directly inside the offload region. OMP will figure out the correct translation to the
+    //device address, i.e. no need to include in the PRAGMA_OFFLOAD map clause below.
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: grads_value_v_ptr[:grads_value_v.size()]) \
                     map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()])")
     for (int iw = 0; iw < nw; iw++)
     {
-      const Value* __restrict__ invRow_ptr    = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
-      const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[nw + iw];
+      const Value* __restrict__ invRow_ptr    = inv_mat_dev_ptr_list_ptr[iw] + rowchanged * lda;
+      const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
       Value grad_x(0), grad_y(0), grad_z(0);
       Complex spingrad(0);
 #if defined(QMC_COMPLEX)
@@ -540,7 +532,7 @@ public:
    */
   static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
                                   MultiWalkerResource& mw_rsc,
-                                  const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                                  const DualVector<Value*>& inv_mat_dev_ptr_list,
                                   const int rowchanged,
                                   const std::vector<Value*>& psiM_g_list,
                                   const std::vector<Value*>& psiM_l_list,
@@ -554,7 +546,7 @@ public:
 
     if (engine_leader.no_delayed_update_)
     {
-      mw_updateRow(engines, mw_rsc, psiMinv_refs, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
+      mw_updateRow(engines, mw_rsc, inv_mat_dev_ptr_list, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
       return;
     }
 
@@ -567,6 +559,7 @@ public:
     int& delay_count                  = engine_leader.delay_count;
     const int lda_Binv                = engine_leader.Binv_gpu.cols();
     const int norb                    = engine_leader.invRow.size();
+    const int lda                     = getAlignedSize<Value>(norb);
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
     const size_t phi_vgl_stride       = nw * norb;
@@ -580,12 +573,11 @@ public:
         reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.data() + sizeof(Value*) * num_ptrs_packed * nw);
     for (int iw = 0, count_accepted = 0, count_rejected = 0; iw < nw; iw++)
     {
-      DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
-      const int lda              = psiMinv.cols();
-      This_t& engine             = engines[iw];
+      This_t& engine         = engines[iw];
+      Value* psiMinv_dev_ptr = inv_mat_dev_ptr_list[iw];
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count_accepted]  = psiMinv.device_data() + lda * rowchanged;
+        ptr_buffer[0][count_accepted]  = psiMinv_dev_ptr + lda * rowchanged;
         ptr_buffer[1][count_accepted]  = engine.V_gpu.data();
         ptr_buffer[2][count_accepted]  = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][count_accepted]  = engine.p_gpu.data();
@@ -602,7 +594,7 @@ public:
       }
       else
       {
-        ptr_buffer[0][n_accepted + count_rejected] = psiMinv.device_data() + lda * rowchanged;
+        ptr_buffer[0][n_accepted + count_rejected] = psiMinv_dev_ptr + lda * rowchanged;
         ptr_buffer[1][n_accepted + count_rejected] = engine.V_gpu.data();
         ptr_buffer[2][n_accepted + count_rejected] = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][n_accepted + count_rejected] = engine.p_gpu.data();
@@ -665,7 +657,7 @@ public:
     delay_count++;
     // update Ainv when maximal delay is reached
     if (delay_count == lda_Binv)
-      mw_updateInvMat(engines, mw_rsc, psiMinv_refs);
+      mw_updateInvMat(engines, mw_rsc, inv_mat_dev_ptr_list);
   }
 
   /** update the full Ainv and reset delay_count
@@ -673,7 +665,7 @@ public:
    */
   static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines,
                               MultiWalkerResource& mw_rsc,
-                              const RefVector<DualMatrix<Value>>& psiMinv_refs)
+                              const DualVector<Value*>& inv_mat_dev_ptr_list)
   {
     auto& engine_leader = engines.getLeader();
     int& delay_count    = engine_leader.delay_count;
@@ -684,10 +676,10 @@ public:
     auto& blas_handle          = mw_rsc.blas_handle;
     auto& updateInv_buffer_H2D = mw_rsc.updateInv_buffer_H2D;
     const int norb             = engine_leader.invRow.size();
-    const int lda              = psiMinv_refs[0].get().cols();
+    const int lda              = getAlignedSize<Value>(norb);
     const int nw               = engines.size();
 
-    constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
+    constexpr size_t num_ptrs_packed = 5; // it must match packing and unpacking
     updateInv_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     mw_rsc.resize_fill_constant_arrays(nw);
 
@@ -696,21 +688,20 @@ public:
     {
       This_t& engine    = engines[iw];
       ptr_buffer[0][iw] = engine.U_gpu.data();
-      ptr_buffer[1][iw] = psiMinv_refs[iw].get().device_data();
-      ptr_buffer[2][iw] = engine.tempMat_gpu.data();
-      ptr_buffer[3][iw] = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
-      ptr_buffer[4][iw] = engine.V_gpu.data();
-      ptr_buffer[5][iw] = engine.Binv_gpu.data();
+      ptr_buffer[1][iw] = engine.tempMat_gpu.data();
+      ptr_buffer[2][iw] = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
+      ptr_buffer[3][iw] = engine.V_gpu.data();
+      ptr_buffer[4][iw] = engine.Binv_gpu.data();
     }
 
     queue.enqueueH2D(updateInv_buffer_H2D);
 
     Value** U_mw_ptr        = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data());
-    Value** Ainv_mw_ptr     = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw);
-    Value** tempMat_mw_ptr  = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
-    int** delay_list_mw_ptr = reinterpret_cast<int**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
-    Value** V_mw_ptr        = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
-    Value** Binv_mw_ptr     = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 5);
+    Value** Ainv_mw_ptr     = const_cast<Value**>(inv_mat_dev_ptr_list.device_data());
+    Value** tempMat_mw_ptr  = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw);
+    int** delay_list_mw_ptr = reinterpret_cast<int**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
+    Value** V_mw_ptr        = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
+    Value** Binv_mw_ptr     = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
 
     /*
     if (delay_count == 1)
@@ -761,7 +752,7 @@ public:
    */
   static std::vector<const Value*> mw_getInvRow(const RefVectorWithLeader<This_t>& engines,
                                                 MultiWalkerResource& mw_rsc,
-                                                const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                                                const DualVector<Value*>& inv_mat_dev_ptr_list,
                                                 const int row_id,
                                                 bool on_host)
   {
@@ -772,22 +763,22 @@ public:
     else if (engine_leader.invRow_id != row_id)
     {
       // this can be skipped if mw_evalGrad gets called already.
-      mw_prepareInvRow(engines, mw_rsc, psiMinv_refs, row_id);
+      mw_prepareInvRow(engines, mw_rsc, inv_mat_dev_ptr_list, row_id);
       queue.sync();
     }
 
     std::vector<const Value*> row_ptr_list;
-    row_ptr_list.reserve(psiMinv_refs.size());
+    row_ptr_list.reserve(engines.size());
     if (on_host)
     {
       // copy values to host and return host pointer
       if (engine_leader.no_delayed_update_)
-        for (DualMatrix<Value>& psiMinv : psiMinv_refs)
-        {
-          const size_t ncols = psiMinv.cols();
-          psiMinv.updateFrom(ncols, row_id * ncols);
-          row_ptr_list.push_back(psiMinv.data() + row_id * ncols);
-        }
+      {
+        const size_t norb  = engine_leader.invRow.size();
+        const size_t ncols = getAlignedSize<Value>(norb);
+        for (int iw = 0; iw < engines.size(); iw++)
+          row_ptr_list.push_back(inv_mat_dev_ptr_list[iw] + row_id * ncols);
+      }
       else
         for (This_t& engine : engines)
         {
@@ -799,27 +790,17 @@ public:
     {
       // return device pointer
       if (engine_leader.no_delayed_update_)
-        for (DualMatrix<Value>& psiMinv : psiMinv_refs)
-          row_ptr_list.push_back(psiMinv.device_data() + row_id * psiMinv.cols());
+      {
+        const size_t norb  = engine_leader.invRow.size();
+        const size_t ncols = getAlignedSize<Value>(norb);
+        for (int iw = 0; iw < engines.size(); iw++)
+          row_ptr_list.push_back(inv_mat_dev_ptr_list[iw] + row_id * ncols);
+      }
       else
         for (This_t& engine : engines)
           row_ptr_list.push_back(engine.invRow.device_data());
     }
     return row_ptr_list;
-  }
-
-  /// transfer Ainv to the host
-  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines,
-                                  MultiWalkerResource& mw_rsc,
-                                  const RefVector<DualMatrix<Value>>& psiMinv_refs)
-  {
-    auto& engine_leader = engines.getLeader();
-    auto& queue         = mw_rsc.queue;
-    engine_leader.guard_no_delay();
-
-    for (DualMatrix<Value>& psiMinv : psiMinv_refs)
-      queue.enqueueD2H(psiMinv);
-    queue.sync();
   }
 };
 } // namespace qmcplusplus

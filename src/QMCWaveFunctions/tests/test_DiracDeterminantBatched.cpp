@@ -434,16 +434,16 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   ddc.mw_recompute(ddc_ref_list, p_ref_list, isAccepted);
 
   ddc.mw_prepareGroup(ddc_ref_list);
-  auto& inv_mat_ptrs = ddc.get_inv_mat_ptrs();
-  REQUIRE(inv_mat_ptrs.size() == 2);
-  CHECK(inv_mat_ptrs[0] == ddc.get_psiMinv().data());
-  CHECK(inv_mat_ptrs[1] == ddc_clone_ref.get_psiMinv().data());
-  inv_mat_ptrs.updateFrom();
-  CHECK(inv_mat_ptrs[0] == ddc.get_psiMinv().device_data());
-  CHECK(inv_mat_ptrs[1] == ddc_clone_ref.get_psiMinv().device_data());
+  auto& inv_mat_dev_ptr_list = ddc.get_inv_mat_dev_ptr_list();
+  REQUIRE(inv_mat_dev_ptr_list.size() == 2);
+  CHECK(inv_mat_dev_ptr_list[0] == ddc.get_psiMinv().device_data());
+  CHECK(inv_mat_dev_ptr_list[1] == ddc_clone_ref.get_psiMinv().device_data());
+  inv_mat_dev_ptr_list.updateFrom();
+  CHECK(inv_mat_dev_ptr_list[0] == ddc.get_psiMinv().device_data());
+  CHECK(inv_mat_dev_ptr_list[1] == ddc_clone_ref.get_psiMinv().device_data());
   ddc.mw_prepareGroup(ddc_ref_list);
-  CHECK(inv_mat_ptrs[0] == ddc.get_psiMinv().data());
-  CHECK(inv_mat_ptrs[1] == ddc_clone_ref.get_psiMinv().data());
+  CHECK(inv_mat_dev_ptr_list[0] == ddc.get_psiMinv().device_data());
+  CHECK(inv_mat_dev_ptr_list[1] == ddc_clone_ref.get_psiMinv().device_data());
 
   std::vector<PsiValue> ratios(2);
   std::vector<Grad> grad_new(2);
